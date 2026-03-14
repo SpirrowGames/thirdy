@@ -1,0 +1,11 @@
+[project]
+name = "thirdy"
+version = "0.1.0"
+description = "Proactive AI Development Agent"
+requires-python = ">=3.12"
+
+[tool.uv.workspace]
+members = [
+    "packages/shared-schemas",
+    "apps/api",
+]
