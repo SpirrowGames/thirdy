@@ -1,8 +1,9 @@
 from collections.abc import AsyncGenerator
 from uuid import UUID
 
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from llm_client import LexoraClient
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -36,3 +37,7 @@ async def get_current_user(
             detail="User not found",
         )
     return user
+
+
+def get_lexora_client(request: Request) -> LexoraClient:
+    return request.app.state.lexora_client

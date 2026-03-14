@@ -14,7 +14,9 @@ dependencies = [
     "httpx>=0.28",
     "python-jose[cryptography]>=3.3",
     "itsdangerous>=2.2",
+    "sse-starlette>=2.0",
     "shared-schemas",
+    "llm-client",
 ]
 
 [dependency-groups]
@@ -33,6 +35,7 @@ packages = ["src/api"]
 
 [tool.uv.sources]
 shared-schemas = { workspace = true }
+llm-client = { workspace = true }
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

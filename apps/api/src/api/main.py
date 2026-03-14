@@ -1,12 +1,14 @@
 from contextlib import asynccontextmanager
 
+import httpx
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from llm_client import LexoraClient
 from sqlalchemy import text
 from starlette.middleware.sessions import SessionMiddleware
 
 from api.config import settings
-from api.db.engine import engine
+from api.db.engine import async_session, engine
 
 
 @asynccontextmanager
@@ -14,7 +16,22 @@ async def lifespan(app: FastAPI):
     # Verify DB connection on startup
     async with engine.begin() as conn:
         await conn.execute(text("SELECT 1"))
+
+    # Session factory for streaming handlers
+    app.state.session_factory = async_session
+
+    # Initialize Lexora client
+    http_client = httpx.AsyncClient()
+    app.state.lexora_client = LexoraClient(
+        http_client=http_client,
+        base_url=settings.lexora_base_url,
+        default_model=settings.lexora_default_model,
+    )
+
     yield
+
+    # Cleanup
+    await http_client.aclose()
     await engine.dispose()
 
 
@@ -35,10 +52,14 @@ def create_app() -> FastAPI:
 
     # Routers
     from api.auth.router import router as auth_router
+    from api.routers.chat import router as chat_router
+    from api.routers.conversations import router as conversations_router
     from api.routers.health import router as health_router
 
     app.include_router(health_router)
     app.include_router(auth_router)
+    app.include_router(conversations_router)
+    app.include_router(chat_router)
 
     return app
 

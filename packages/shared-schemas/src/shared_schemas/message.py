@@ -23,3 +23,9 @@ class MessageRead(BaseSchema):
     role: MessageRole
     content: str
     created_at: datetime
+
+
+class ChatSendRequest(BaseSchema):
+    conversation_id: UUID | None = None
+    content: str
+    model: str | None = None

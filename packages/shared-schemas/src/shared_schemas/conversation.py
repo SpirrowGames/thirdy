@@ -8,6 +8,10 @@ class ConversationCreate(BaseSchema):
     title: str | None = None
 
 
+class ConversationUpdate(BaseSchema):
+    title: str | None = None
+
+
 class ConversationRead(BaseSchema):
     id: UUID
     user_id: UUID

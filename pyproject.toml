@@ -7,5 +7,6 @@ requires-python = ">=3.12"
 [tool.uv.workspace]
 members = [
     "packages/shared-schemas",
+    "packages/llm-client",
     "apps/api",
 ]

@@ -20,6 +20,12 @@ class Settings(BaseSettings):
     # CORS
     cors_origins: list[str] = ["http://localhost:3000"]
 
+    # Lexora (LLM Proxy)
+    lexora_base_url: str = "http://sg-ai-server-01:8110"
+    lexora_default_model: str = "gpt-4o"
+    chat_history_limit: int = 50
+    chat_system_prompt: str = "You are a helpful AI assistant."
+
     model_config = {"env_file": ".env", "extra": "ignore"}
 
 
