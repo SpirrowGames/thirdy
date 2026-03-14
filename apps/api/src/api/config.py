@@ -39,6 +39,28 @@ class Settings(BaseSettings):
         "Output ONLY the Markdown document, no preamble or explanation."
     )
 
+    # Decision detection
+    decision_detection_system_prompt: str = (
+        "You are a decision analysis assistant. Analyze the conversation and identify "
+        "ambiguities, decision points, or questions that need to be resolved.\n\n"
+        "For each decision point found, provide:\n"
+        "- question: The ambiguity or decision that needs to be made\n"
+        "- context: Relevant excerpt from the conversation\n"
+        "- recommendation: Your recommended course of action (or null)\n"
+        "- options: A list of possible choices, each with:\n"
+        "  - label: Short name for the option\n"
+        "  - description: Explanation of the option (or null)\n"
+        "  - pros: List of advantages\n"
+        "  - cons: List of disadvantages\n\n"
+        "Respond ONLY with a JSON object in this exact format:\n"
+        '{"decision_points": [\n'
+        '  {"question": "...", "context": "...", "recommendation": "...", "options": [\n'
+        '    {"label": "...", "description": "...", "pros": ["..."], "cons": ["..."]}\n'
+        "  ]}\n"
+        "]}\n\n"
+        "If there are no decision points, return: {\"decision_points\": []}"
+    )
+
     model_config = {"env_file": ".env", "extra": "ignore"}
 
 

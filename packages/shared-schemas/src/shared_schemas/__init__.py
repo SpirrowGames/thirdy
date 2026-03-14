@@ -4,6 +4,7 @@ from .user import UserRead
 from .conversation import ConversationCreate, ConversationUpdate, ConversationRead
 from .message import MessageRole, MessageCreate, MessageRead, ChatSendRequest
 from .specification import SpecStatus, SpecCreate, SpecRead, SpecUpdate, SpecExtractRequest
+from .decision import DecisionStatus, DecisionOptionRead, DecisionPointRead, DecisionPointUpdate, DecisionDetectRequest
 
 __all__ = [
     "BaseSchema",
@@ -25,4 +26,9 @@ __all__ = [
     "SpecRead",
     "SpecUpdate",
     "SpecExtractRequest",
+    "DecisionStatus",
+    "DecisionOptionRead",
+    "DecisionPointRead",
+    "DecisionPointUpdate",
+    "DecisionDetectRequest",
 ]

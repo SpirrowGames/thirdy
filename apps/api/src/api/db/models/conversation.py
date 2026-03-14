@@ -24,3 +24,6 @@ class Conversation(TimestampMixin, Base):
     specifications: Mapped[list["Specification"]] = relationship(
         back_populates="conversation", cascade="all, delete-orphan"
     )
+    decision_points: Mapped[list["DecisionPoint"]] = relationship(
+        back_populates="conversation", cascade="all, delete-orphan"
+    )
