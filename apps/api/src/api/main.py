@@ -55,11 +55,13 @@ def create_app() -> FastAPI:
     from api.routers.chat import router as chat_router
     from api.routers.conversations import router as conversations_router
     from api.routers.health import router as health_router
+    from api.routers.specifications import router as specifications_router
 
     app.include_router(health_router)
     app.include_router(auth_router)
     app.include_router(conversations_router)
     app.include_router(chat_router)
+    app.include_router(specifications_router)
 
     return app
 

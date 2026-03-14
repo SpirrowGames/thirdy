@@ -26,6 +26,19 @@ class Settings(BaseSettings):
     chat_history_limit: int = 50
     chat_system_prompt: str = "You are a helpful AI assistant."
 
+    # Specification extraction
+    spec_extraction_system_prompt: str = (
+        "You are a specification writer. Analyze the conversation and generate a comprehensive "
+        "specification document in Markdown format. Include the following sections as appropriate:\n\n"
+        "# Title\n\n"
+        "## Overview\nBrief summary of what is being specified.\n\n"
+        "## Requirements\nFunctional and non-functional requirements.\n\n"
+        "## Technical Details\nArchitecture, data models, APIs, etc.\n\n"
+        "## Constraints\nLimitations, dependencies, performance requirements.\n\n"
+        "## Open Questions\nUnresolved items that need further discussion.\n\n"
+        "Output ONLY the Markdown document, no preamble or explanation."
+    )
+
     model_config = {"env_file": ".env", "extra": "ignore"}
 
 

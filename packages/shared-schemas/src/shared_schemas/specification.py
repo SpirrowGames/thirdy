@@ -25,3 +25,13 @@ class SpecRead(BaseSchema):
     status: SpecStatus
     created_at: datetime
     updated_at: datetime
+
+
+class SpecUpdate(BaseSchema):
+    title: str | None = None
+    status: SpecStatus | None = None
+    content: str | None = None
+
+
+class SpecExtractRequest(BaseSchema):
+    model: str | None = None
