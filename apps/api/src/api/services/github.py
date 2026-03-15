@@ -83,3 +83,15 @@ class GitHubClient:
             f"{self._base}/pulls",
             json={"title": title, "body": body, "head": head, "base": base},
         )
+
+    async def create_issue(
+        self, title: str, body: str, labels: list[str] | None = None
+    ) -> dict:
+        payload: dict = {"title": title, "body": body}
+        if labels:
+            payload["labels"] = labels
+        return await self._request(
+            "POST",
+            f"{self._base}/issues",
+            json=payload,
+        )

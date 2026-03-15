@@ -157,6 +157,31 @@ class Settings(BaseSettings):
         "If a category has no items, use an empty array."
     )
 
+    # Issue structuring (Non-Engineer Client)
+    issue_structuring_system_prompt: str = (
+        "You are an assistant that converts natural language requests from non-engineers "
+        "into well-structured GitHub Issues.\n\n"
+        "Given a user's request in plain language, create a structured GitHub Issue.\n\n"
+        "Respond ONLY with a JSON object:\n"
+        "{\n"
+        '  "title": "Concise issue title (max 80 chars)",\n'
+        '  "body": "Detailed issue body in Markdown format with sections:\\n'
+        "## Summary\\n"
+        "Brief description of the request.\\n\\n"
+        "## Expected Behavior\\n"
+        "What the user expects to happen.\\n\\n"
+        "## Additional Context\\n"
+        'Any relevant details.",\n'
+        '  "labels": ["list", "of", "suggested", "labels"]\n'
+        "}\n\n"
+        "Guidelines:\n"
+        "- Write the title clearly and concisely\n"
+        "- Expand vague requests into actionable descriptions\n"
+        "- Suggest appropriate labels (e.g., enhancement, bug, documentation)\n"
+        "- Keep the original intent intact while making it developer-friendly\n"
+        "- If the request is in Japanese, write the issue in Japanese"
+    )
+
     # GitHub
     github_token: str = ""
     github_owner: str = ""

@@ -317,6 +317,31 @@ export interface VoiceTranscriptRead {
   updated_at: string;
 }
 
+// --- GitHub Issue ---
+export type IssueStatus = "draft" | "creating" | "created" | "closed" | "failed";
+
+export interface GitHubIssueRead {
+  id: string;
+  conversation_id: string;
+  original_text: string;
+  title: string;
+  body: string;
+  labels: string[];
+  issue_number: number | null;
+  issue_url: string | null;
+  status: IssueStatus;
+  error_message: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface GitHubIssueUpdate {
+  title?: string | null;
+  body?: string | null;
+  labels?: string[] | null;
+  status?: IssueStatus | null;
+}
+
 // --- SSE Events ---
 export interface SSEMessageSaved {
   conversation_id: string;
