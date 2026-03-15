@@ -15,6 +15,8 @@ dependencies = [
     "python-jose[cryptography]>=3.3",
     "itsdangerous>=2.2",
     "sse-starlette>=2.0",
+    "faster-whisper>=1.0",
+    "python-multipart>=0.0.9",
     "shared-schemas",
     "llm-client",
 ]

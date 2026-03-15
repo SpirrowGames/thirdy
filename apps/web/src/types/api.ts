@@ -293,6 +293,30 @@ export interface PublicVoteSession {
   };
 }
 
+// --- Voice ---
+export type VoiceTranscriptStatus = "processing" | "completed" | "failed";
+
+export interface TranscriptSegment {
+  start: number;
+  end: number;
+  text: string;
+}
+
+export interface VoiceTranscriptRead {
+  id: string;
+  conversation_id: string;
+  filename: string;
+  duration_seconds: number | null;
+  language: string | null;
+  transcript: string;
+  segments: TranscriptSegment[];
+  classification: Record<string, unknown> | null;
+  status: VoiceTranscriptStatus;
+  error_message: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 // --- SSE Events ---
 export interface SSEMessageSaved {
   conversation_id: string;

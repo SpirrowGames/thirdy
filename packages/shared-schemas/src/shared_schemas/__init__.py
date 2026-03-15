@@ -10,6 +10,7 @@ from .generated_task import TaskPriority, TaskStatus, GeneratedTaskRead, Generat
 from .generated_code import CodeStatus, GeneratedCodeRead, GeneratedCodeUpdate, CodeGenerateRequest
 from .pull_request import PRStatus, PullRequestRead, PullRequestUpdate, PRCreateRequest
 from .vote import VoteSessionStatus, VoteRead, VoteTally, VoteSessionRead, VoteSessionCreate, VoteCast, MeetingSuggestion, CalendarEventPreset, CalendarEventCreate, CalendarEventResponse
+from .voice import VoiceTranscriptStatus, TranscriptSegment, VoiceTranscriptRead, VoiceTranscribeRequest
 
 __all__ = [
     "BaseSchema",
@@ -63,4 +64,8 @@ __all__ = [
     "CalendarEventPreset",
     "CalendarEventCreate",
     "CalendarEventResponse",
+    "VoiceTranscriptStatus",
+    "TranscriptSegment",
+    "VoiceTranscriptRead",
+    "VoiceTranscribeRequest",
 ]

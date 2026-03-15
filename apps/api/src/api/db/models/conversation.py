@@ -39,3 +39,6 @@ class Conversation(TimestampMixin, Base):
     pull_requests: Mapped[list["PullRequest"]] = relationship(
         back_populates="conversation", cascade="all, delete-orphan"
     )
+    voice_transcripts: Mapped[list["VoiceTranscript"]] = relationship(
+        back_populates="conversation", cascade="all, delete-orphan"
+    )

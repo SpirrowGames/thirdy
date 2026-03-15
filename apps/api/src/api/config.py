@@ -139,6 +139,24 @@ class Settings(BaseSettings):
         "Output ONLY the Markdown document with code blocks, no preamble."
     )
 
+    # Whisper (Voice transcription)
+    whisper_model_size: str = "base"
+
+    # Voice classification
+    voice_classification_system_prompt: str = (
+        "You are a meeting transcript analyzer. Given a transcribed meeting text, "
+        "classify and extract structured information.\n\n"
+        "Respond ONLY with a JSON object:\n"
+        "{\n"
+        '  "summary": "Brief summary of the meeting content",\n'
+        '  "requirements": ["List of requirements or feature requests mentioned"],\n'
+        '  "questions": ["Open questions raised during the meeting"],\n'
+        '  "decisions": ["Decisions made during the meeting"],\n'
+        '  "action_items": ["Action items assigned"]\n'
+        "}\n\n"
+        "If a category has no items, use an empty array."
+    )
+
     # GitHub
     github_token: str = ""
     github_owner: str = ""

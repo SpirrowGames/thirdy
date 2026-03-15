@@ -41,3 +41,9 @@ async def get_current_user(
 
 def get_lexora_client(request: Request) -> LexoraClient:
     return request.app.state.lexora_client
+
+
+def get_whisper_service(request: Request):
+    from api.services.whisper_service import WhisperService
+    service: WhisperService = request.app.state.whisper_service
+    return service

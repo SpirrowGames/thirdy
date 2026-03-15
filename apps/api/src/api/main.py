@@ -9,6 +9,7 @@ from starlette.middleware.sessions import SessionMiddleware
 
 from api.config import settings
 from api.db.engine import async_session, engine
+from api.services.whisper_service import WhisperService
 
 
 @asynccontextmanager
@@ -27,6 +28,9 @@ async def lifespan(app: FastAPI):
         base_url=settings.lexora_base_url,
         default_model=settings.lexora_default_model,
     )
+
+    # Initialize Whisper service
+    app.state.whisper_service = WhisperService(model_size=settings.whisper_model_size)
 
     yield
 
@@ -62,6 +66,7 @@ def create_app() -> FastAPI:
     from api.routers.codes import router as codes_router
     from api.routers.pull_requests import router as pull_requests_router
     from api.routers.votes import router as votes_router
+    from api.routers.voice import router as voice_router
 
     app.include_router(health_router)
     app.include_router(auth_router)
@@ -74,6 +79,7 @@ def create_app() -> FastAPI:
     app.include_router(codes_router)
     app.include_router(pull_requests_router)
     app.include_router(votes_router)
+    app.include_router(voice_router)
 
     return app
 
