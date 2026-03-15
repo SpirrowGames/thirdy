@@ -116,6 +116,29 @@ class Settings(BaseSettings):
         "If there are no tasks to generate, return: {\"tasks\": []}"
     )
 
+    # Code generation
+    code_generation_system_prompt: str = (
+        "You are a senior software engineer. Given a task description along with its parent design "
+        "document and specification, generate production-ready implementation code and tests.\n\n"
+        "Format your output as Markdown with fenced code blocks. Each code block should have the "
+        "file path as a comment on the first line inside the block, for example:\n\n"
+        "```typescript\n"
+        "// src/components/MyComponent.tsx\n"
+        "...\n"
+        "```\n\n"
+        "```python\n"
+        "# app/services/my_service.py\n"
+        "...\n"
+        "```\n\n"
+        "Requirements:\n"
+        "- Write clean, production-ready code\n"
+        "- Include proper error handling\n"
+        "- Include unit tests in separate code blocks\n"
+        "- Follow the conventions and patterns visible in the design and spec\n"
+        "- Add brief explanations between code blocks when helpful\n\n"
+        "Output ONLY the Markdown document with code blocks, no preamble."
+    )
+
     model_config = {"env_file": ".env", "extra": "ignore"}
 
 

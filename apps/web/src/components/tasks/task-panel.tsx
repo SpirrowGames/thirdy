@@ -17,9 +17,10 @@ import { TaskCard } from "./task-card";
 interface TaskPanelProps {
   conversationId: string | null;
   preselectedDesignId?: string;
+  onTaskDone?: (taskId: string) => void;
 }
 
-export function TaskPanel({ conversationId, preselectedDesignId }: TaskPanelProps) {
+export function TaskPanel({ conversationId, preselectedDesignId, onTaskDone }: TaskPanelProps) {
   const {
     tasks,
     isLoading,
@@ -91,9 +92,12 @@ export function TaskPanel({ conversationId, preselectedDesignId }: TaskPanelProp
                 key={task.id}
                 task={task}
                 allTasks={tasks}
-                onStatusChange={(id, status) =>
-                  updateTask(id, { status })
-                }
+                onStatusChange={(id, status) => {
+                  updateTask(id, { status });
+                  if (status === "done" && onTaskDone) {
+                    onTaskDone(id);
+                  }
+                }}
                 onDelete={deleteTask}
               />
             ))}

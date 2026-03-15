@@ -7,6 +7,7 @@ from .specification import SpecStatus, SpecCreate, SpecRead, SpecUpdate, SpecExt
 from .decision import DecisionStatus, DecisionOptionRead, DecisionPointRead, DecisionPointUpdate, DecisionDetectRequest
 from .design import DesignStatus, DesignRead, DesignUpdate, DesignDecomposeRequest
 from .generated_task import TaskPriority, TaskStatus, GeneratedTaskRead, GeneratedTaskUpdate, TaskGenerateRequest
+from .generated_code import CodeStatus, GeneratedCodeRead, GeneratedCodeUpdate, CodeGenerateRequest
 
 __all__ = [
     "BaseSchema",
@@ -42,4 +43,8 @@ __all__ = [
     "GeneratedTaskRead",
     "GeneratedTaskUpdate",
     "TaskGenerateRequest",
+    "CodeStatus",
+    "GeneratedCodeRead",
+    "GeneratedCodeUpdate",
+    "CodeGenerateRequest",
 ]

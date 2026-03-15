@@ -165,6 +165,29 @@ export interface TaskGenerateRequest {
   model?: string | null;
 }
 
+// --- Generated Code ---
+export type CodeStatus = "draft" | "approved" | "rejected";
+
+export interface GeneratedCodeRead {
+  id: string;
+  conversation_id: string;
+  task_id: string;
+  content: string;
+  status: CodeStatus;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface GeneratedCodeUpdate {
+  content?: string | null;
+  status?: CodeStatus | null;
+}
+
+export interface CodeGenerateRequest {
+  task_id: string;
+  model?: string | null;
+}
+
 // --- SSE Events ---
 export interface SSEMessageSaved {
   conversation_id: string;
