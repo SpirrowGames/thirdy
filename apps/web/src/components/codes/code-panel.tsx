@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { parseCodeBlocks } from "@/lib/parse-code-blocks";
 import { useCodes } from "@/hooks/use-codes";
 import { useTasks } from "@/hooks/use-tasks";
 import { Button } from "@/components/ui/button";
@@ -38,6 +39,11 @@ export function CodePanel({ conversationId, preselectedTaskId, onCodeApproved }:
   const doneTasks = tasks.filter((t) => t.status === "done");
 
   const [selectedTaskId, setSelectedTaskId] = useState<string>("");
+
+  const streamingFileCount = useMemo(
+    () => (generatingContent ? parseCodeBlocks(generatingContent).length : 0),
+    [generatingContent],
+  );
 
   useEffect(() => {
     if (preselectedTaskId) {
@@ -83,6 +89,7 @@ export function CodePanel({ conversationId, preselectedTaskId, onCodeApproved }:
           <div className="mb-4 rounded-lg border bg-muted/50 p-3">
             <p className="mb-2 text-xs font-medium text-muted-foreground">
               Generating code...
+              {streamingFileCount > 0 && ` (${streamingFileCount} files detected)`}
             </p>
             <div className="prose prose-sm dark:prose-invert max-w-none">
               <ReactMarkdown remarkPlugins={[remarkGfm]}>

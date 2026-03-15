@@ -1,5 +1,8 @@
 "use client";
 
+import { useState } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import type { PullRequestRead, PRStatus } from "@/types/api";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -26,12 +29,24 @@ const STATUS_LABELS: Record<PRStatus, string> = {
   failed: "Failed",
 };
 
+const STATUS_TRANSITIONS: Record<PRStatus, PRStatus[]> = {
+  creating: [],
+  created: ["merged", "closed"],
+  merged: [],
+  closed: [],
+  failed: [],
+};
+
 interface PRCardProps {
   pr: PullRequestRead;
+  onStatusChange: (prId: string, status: PRStatus) => void;
   onDelete: (prId: string) => void;
 }
 
-export function PRCard({ pr, onDelete }: PRCardProps) {
+export function PRCard({ pr, onStatusChange, onDelete }: PRCardProps) {
+  const [showDetails, setShowDetails] = useState(false);
+  const nextStatuses = STATUS_TRANSITIONS[pr.status];
+
   return (
     <Card>
       <CardHeader className="pb-2">
@@ -54,6 +69,24 @@ export function PRCard({ pr, onDelete }: PRCardProps) {
             {pr.error_message}
           </div>
         )}
+
+        {/* Status transition buttons */}
+        {nextStatuses.length > 0 && (
+          <div className="flex flex-wrap gap-1 mb-2">
+            {nextStatuses.map((s) => (
+              <Button
+                key={s}
+                variant="outline"
+                size="sm"
+                className="h-6 text-xs"
+                onClick={() => onStatusChange(pr.id, s)}
+              >
+                Mark as {STATUS_LABELS[s]}
+              </Button>
+            ))}
+          </div>
+        )}
+
         <div className="flex gap-1">
           {pr.pr_url && (
             <a
@@ -65,6 +98,16 @@ export function PRCard({ pr, onDelete }: PRCardProps) {
               View on GitHub
             </a>
           )}
+          {pr.description && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 text-xs"
+              onClick={() => setShowDetails(!showDetails)}
+            >
+              {showDetails ? "Hide details" : "Details"}
+            </Button>
+          )}
           <Button
             variant="ghost"
             size="sm"
@@ -74,6 +117,14 @@ export function PRCard({ pr, onDelete }: PRCardProps) {
             Delete
           </Button>
         </div>
+
+        {showDetails && pr.description && (
+          <div className="prose prose-sm dark:prose-invert max-w-none mt-2 max-h-60 overflow-y-auto rounded border p-2">
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+              {pr.description}
+            </ReactMarkdown>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

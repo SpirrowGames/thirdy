@@ -1,8 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
+import { Check, Loader2, Circle } from "lucide-react";
 import { usePullRequests } from "@/hooks/use-pull-requests";
 import { useCodes } from "@/hooks/use-codes";
+import { useTasks } from "@/hooks/use-tasks";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
@@ -19,6 +21,13 @@ interface PRPanelProps {
   preselectedCodeId?: string;
 }
 
+const PR_STEPS = [
+  { event: "pr_started", label: "Initializing" },
+  { event: "branch_created", label: "Branch created" },
+  { event: "files_committed", label: "Files committed" },
+  { event: "pr_created", label: "PR created" },
+] as const;
+
 export function PRPanel({ conversationId, preselectedCodeId }: PRPanelProps) {
   const {
     pullRequests,
@@ -27,11 +36,18 @@ export function PRPanel({ conversationId, preselectedCodeId }: PRPanelProps) {
     progress,
     error,
     createPR,
+    updatePR,
     deletePR,
   } = usePullRequests(conversationId);
 
   const { codes } = useCodes(conversationId);
+  const { tasks } = useTasks(conversationId);
   const approvedCodes = codes.filter((c) => c.status === "approved");
+
+  const taskTitleMap = useMemo(
+    () => new Map(tasks.map((t) => [t.id, t.title])),
+    [tasks],
+  );
 
   const [selectedCodeId, setSelectedCodeId] = useState<string>("");
 
@@ -41,6 +57,21 @@ export function PRPanel({ conversationId, preselectedCodeId }: PRPanelProps) {
     }
   }, [preselectedCodeId]);
 
+  // Determine which step is current based on progress
+  const currentStepEvent = progress?.step
+    ? (() => {
+        const stepText = progress.step.toLowerCase();
+        if (stepText.includes("pull request created") || stepText.includes("pr created")) return "pr_created";
+        if (stepText.includes("files committed") || stepText.includes("committed")) return "files_committed";
+        if (stepText.includes("branch created") || stepText.includes("branch")) return "branch_created";
+        return "pr_started";
+      })()
+    : null;
+
+  const currentStepIndex = currentStepEvent
+    ? PR_STEPS.findIndex((s) => s.event === currentStepEvent)
+    : -1;
+
   return (
     <div className="flex h-full flex-col">
       <div className="space-y-2 border-b p-3">
@@ -49,11 +80,14 @@ export function PRPanel({ conversationId, preselectedCodeId }: PRPanelProps) {
             <SelectValue placeholder="Select approved code..." />
           </SelectTrigger>
           <SelectContent>
-            {approvedCodes.map((code) => (
-              <SelectItem key={code.id} value={code.id}>
-                Code {code.id.slice(0, 8)}...
-              </SelectItem>
-            ))}
+            {approvedCodes.map((code) => {
+              const taskName = taskTitleMap.get(code.task_id);
+              return (
+                <SelectItem key={code.id} value={code.id}>
+                  {taskName ?? `Code ${code.id.slice(0, 8)}...`}
+                </SelectItem>
+              );
+            })}
           </SelectContent>
         </Select>
         <Button
@@ -73,17 +107,47 @@ export function PRPanel({ conversationId, preselectedCodeId }: PRPanelProps) {
       )}
 
       <ScrollArea className="flex-1 p-3">
-        {isCreating && progress && (
+        {isCreating && (
           <div className="mb-4 rounded-lg border bg-muted/50 p-3">
-            <p className="mb-1 text-xs font-medium text-muted-foreground">
-              {progress.step}
+            <p className="mb-2 text-xs font-medium text-muted-foreground">
+              Creating pull request...
             </p>
-            {progress.detail && (
-              <p className="text-xs text-foreground">{progress.detail}</p>
-            )}
-            <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-muted">
-              <div className="h-full w-1/2 animate-pulse rounded-full bg-primary" />
-            </div>
+            <ul className="space-y-1.5">
+              {PR_STEPS.map((step, i) => {
+                const isDone = i < currentStepIndex;
+                const isCurrent = i === currentStepIndex;
+                const isPending = i > currentStepIndex;
+
+                let detail = "";
+                if ((isDone || isCurrent) && progress?.detail) {
+                  if (step.event === currentStepEvent) {
+                    detail = progress.detail;
+                  }
+                }
+
+                return (
+                  <li key={step.event} className="flex items-center gap-2 text-xs">
+                    {isDone ? (
+                      <Check className="h-3.5 w-3.5 text-green-600 shrink-0" />
+                    ) : isCurrent ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin text-primary shrink-0" />
+                    ) : (
+                      <Circle className="h-3.5 w-3.5 text-muted-foreground/40 shrink-0" />
+                    )}
+                    <span
+                      className={
+                        isPending
+                          ? "text-muted-foreground/40"
+                          : "text-foreground"
+                      }
+                    >
+                      {step.label}
+                      {detail && ` — ${detail}`}
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
           </div>
         )}
 
@@ -101,7 +165,12 @@ export function PRPanel({ conversationId, preselectedCodeId }: PRPanelProps) {
         ) : (
           <div className="space-y-3">
             {pullRequests.map((pr) => (
-              <PRCard key={pr.id} pr={pr} onDelete={deletePR} />
+              <PRCard
+                key={pr.id}
+                pr={pr}
+                onStatusChange={(id, status) => updatePR(id, { status })}
+                onDelete={deletePR}
+              />
             ))}
           </div>
         )}

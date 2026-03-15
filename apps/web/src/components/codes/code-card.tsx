@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
+import { useState, useMemo } from "react";
 import type { GeneratedCodeRead, CodeStatus } from "@/types/api";
+import { parseCodeBlocks } from "@/lib/parse-code-blocks";
+import { CodeFileViewer } from "./code-file-viewer";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -45,6 +45,10 @@ export function CodeCard({
   onDelete,
 }: CodeCardProps) {
   const [expanded, setExpanded] = useState(false);
+  const fileCount = useMemo(
+    () => parseCodeBlocks(code.content).length,
+    [code.content],
+  );
   const nextStatuses = STATUS_TRANSITIONS[code.status];
 
   return (
@@ -85,13 +89,13 @@ export function CodeCard({
           onClick={() => setExpanded(!expanded)}
           className="text-xs text-muted-foreground hover:text-foreground"
         >
-          {expanded ? "Hide code" : "Show code"}
+          {expanded
+            ? "Hide code"
+            : `Show code${fileCount > 0 ? ` (${fileCount} files)` : ""}`}
         </button>
         {expanded && (
-          <div className="prose prose-sm dark:prose-invert max-w-none mt-2 max-h-96 overflow-y-auto">
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>
-              {code.content}
-            </ReactMarkdown>
+          <div className="mt-2 max-h-96 overflow-y-auto">
+            <CodeFileViewer content={code.content} />
           </div>
         )}
       </CardContent>
