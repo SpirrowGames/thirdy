@@ -5,6 +5,7 @@ from .conversation import ConversationCreate, ConversationUpdate, ConversationRe
 from .message import MessageRole, MessageCreate, MessageRead, ChatSendRequest
 from .specification import SpecStatus, SpecCreate, SpecRead, SpecUpdate, SpecExtractRequest
 from .decision import DecisionStatus, DecisionOptionRead, DecisionPointRead, DecisionPointUpdate, DecisionDetectRequest
+from .design import DesignStatus, DesignRead, DesignUpdate, DesignDecomposeRequest
 
 __all__ = [
     "BaseSchema",
@@ -31,4 +32,8 @@ __all__ = [
     "DecisionPointRead",
     "DecisionPointUpdate",
     "DecisionDetectRequest",
+    "DesignStatus",
+    "DesignRead",
+    "DesignUpdate",
+    "DesignDecomposeRequest",
 ]

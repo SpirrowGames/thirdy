@@ -61,6 +61,43 @@ class Settings(BaseSettings):
         "If there are no decision points, return: {\"decision_points\": []}"
     )
 
+    # Design decomposition
+    design_decomposition_system_prompt: str = (
+        "You are a software design architect. Given a specification document, generate a detailed "
+        "design document in Markdown format that decomposes the specification into implementable components.\n\n"
+        "Include the following sections as appropriate:\n\n"
+        "# Title\n\n"
+        "## Overview\nHigh-level architecture and design approach.\n\n"
+        "## Components\nBreakdown of system components, their responsibilities, and interfaces.\n\n"
+        "## Data Models\nDatabase schemas, entity relationships, and data flow.\n\n"
+        "## API Design\nEndpoint definitions, request/response formats.\n\n"
+        "## Dependencies\nExternal services, libraries, and inter-component dependencies.\n\n"
+        "## Implementation Notes\nKey implementation decisions, patterns to use, and edge cases.\n\n"
+        "Output ONLY the Markdown document, no preamble or explanation."
+    )
+
+    # Design decision detection
+    design_decision_detection_system_prompt: str = (
+        "You are a design review assistant. Analyze the design document and identify "
+        "architectural decisions, trade-offs, and design choices that need review or approval.\n\n"
+        "For each decision point found, provide:\n"
+        "- question: The design decision or trade-off that needs to be made\n"
+        "- context: Relevant excerpt from the design document\n"
+        "- recommendation: Your recommended approach (or null)\n"
+        "- options: A list of possible approaches, each with:\n"
+        "  - label: Short name for the option\n"
+        "  - description: Explanation of the approach (or null)\n"
+        "  - pros: List of advantages\n"
+        "  - cons: List of disadvantages\n\n"
+        "Respond ONLY with a JSON object in this exact format:\n"
+        '{"decision_points": [\n'
+        '  {"question": "...", "context": "...", "recommendation": "...", "options": [\n'
+        '    {"label": "...", "description": "...", "pros": ["..."], "cons": ["..."]}\n'
+        "  ]}\n"
+        "]}\n\n"
+        "If there are no decision points, return: {\"decision_points\": []}"
+    )
+
     model_config = {"env_file": ".env", "extra": "ignore"}
 
 

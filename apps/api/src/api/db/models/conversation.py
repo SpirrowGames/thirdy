@@ -27,3 +27,6 @@ class Conversation(TimestampMixin, Base):
     decision_points: Mapped[list["DecisionPoint"]] = relationship(
         back_populates="conversation", cascade="all, delete-orphan"
     )
+    designs: Mapped[list["Design"]] = relationship(
+        back_populates="conversation", cascade="all, delete-orphan"
+    )

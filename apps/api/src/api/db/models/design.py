@@ -6,8 +6,8 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from api.db.base import Base, TimestampMixin
 
 
-class Specification(TimestampMixin, Base):
-    __tablename__ = "specifications"
+class Design(TimestampMixin, Base):
+    __tablename__ = "designs"
 
     id: Mapped[uuid.UUID] = mapped_column(
         primary_key=True, default=uuid.uuid4, server_default="gen_random_uuid()"
@@ -15,11 +15,16 @@ class Specification(TimestampMixin, Base):
     conversation_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("conversations.id", ondelete="CASCADE"), index=True
     )
+    specification_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("specifications.id", ondelete="CASCADE"), index=True
+    )
     title: Mapped[str] = mapped_column(String(500))
     content: Mapped[str] = mapped_column(Text)
     status: Mapped[str] = mapped_column(String(20), server_default="'draft'")
 
-    conversation: Mapped["Conversation"] = relationship(back_populates="specifications")
-    designs: Mapped[list["Design"]] = relationship(
-        back_populates="specification", cascade="all, delete-orphan"
+    conversation: Mapped["Conversation"] = relationship(back_populates="designs")
+    specification: Mapped["Specification"] = relationship(back_populates="designs")
+    decision_points: Mapped[list["DecisionPoint"]] = relationship(
+        back_populates="design",
+        foreign_keys="DecisionPoint.design_id",
     )

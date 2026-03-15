@@ -33,6 +33,7 @@ class DecisionOptionRead(BaseSchema):
 class DecisionPointRead(BaseSchema):
     id: UUID
     conversation_id: UUID
+    design_id: UUID | None = None
     question: str
     context: str
     recommendation: str | None

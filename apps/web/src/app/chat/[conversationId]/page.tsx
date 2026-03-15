@@ -6,6 +6,7 @@ import { useChat } from "@/hooks/use-chat";
 import { MessageList } from "@/components/chat/message-list";
 import { ChatInput } from "@/components/chat/chat-input";
 import { SpecPanel } from "@/components/specs/spec-panel";
+import { DesignPanel } from "@/components/designs/design-panel";
 import { DecisionPanel } from "@/components/decisions/decision-panel";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -40,7 +41,7 @@ export default function ConversationPage() {
             className="h-7 text-xs"
             onClick={() => setPanelOpen(!panelOpen)}
           >
-            {panelOpen ? "Close Panel" : "Specs & Decisions"}
+            {panelOpen ? "Close Panel" : "Specs & Designs"}
           </Button>
         </div>
 
@@ -71,10 +72,14 @@ export default function ConversationPage() {
           <Tabs defaultValue="specs" className="flex h-full flex-col">
             <TabsList className="mx-3 mt-3">
               <TabsTrigger value="specs">Specs</TabsTrigger>
+              <TabsTrigger value="designs">Designs</TabsTrigger>
               <TabsTrigger value="decisions">Decisions</TabsTrigger>
             </TabsList>
             <TabsContent value="specs" className="flex-1 overflow-hidden">
               <SpecPanel conversationId={conversationId} />
+            </TabsContent>
+            <TabsContent value="designs" className="flex-1 overflow-hidden">
+              <DesignPanel conversationId={conversationId} />
             </TabsContent>
             <TabsContent value="decisions" className="flex-1 overflow-hidden">
               <DecisionPanel conversationId={conversationId} />

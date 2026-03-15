@@ -73,6 +73,31 @@ export interface SpecExtractRequest {
   model?: string | null;
 }
 
+// --- Design ---
+export type DesignStatus = "draft" | "in_review" | "approved";
+
+export interface DesignRead {
+  id: string;
+  conversation_id: string;
+  specification_id: string;
+  title: string;
+  content: string;
+  status: DesignStatus;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DesignUpdate {
+  title?: string | null;
+  status?: DesignStatus | null;
+  content?: string | null;
+}
+
+export interface DesignDecomposeRequest {
+  spec_id: string;
+  model?: string | null;
+}
+
 // --- Decision ---
 export type DecisionStatus = "pending" | "resolved" | "dismissed";
 
@@ -88,6 +113,7 @@ export interface DecisionOptionRead {
 export interface DecisionPointRead {
   id: string;
   conversation_id: string;
+  design_id: string | null;
   question: string;
   context: string;
   recommendation: string | null;
@@ -136,6 +162,24 @@ export interface SSEExtractionStarted {
 
 export interface SSEDetectionStarted {
   conversation_id: string;
+}
+
+export interface SSEDecomposeStarted {
+  conversation_id: string;
+  spec_id: string;
+  design_id: string | null;
+  mode: "create" | "update";
+}
+
+export interface SSEDesignSaved {
+  design_id: string;
+  conversation_id: string;
+}
+
+export interface SSEDesignDone {
+  design_id: string;
+  conversation_id: string;
+  decision_count: number;
 }
 
 export interface SSEDecisionDone {

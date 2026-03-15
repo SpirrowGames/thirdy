@@ -24,8 +24,17 @@ class DecisionPoint(TimestampMixin, Base):
         nullable=True,
     )
     resolution_note: Mapped[str | None] = mapped_column(Text, nullable=True)
+    design_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("designs.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
 
     conversation: Mapped["Conversation"] = relationship(back_populates="decision_points")
+    design: Mapped["Design | None"] = relationship(
+        back_populates="decision_points",
+        foreign_keys=[design_id],
+    )
     options: Mapped[list["DecisionOption"]] = relationship(
         back_populates="decision_point",
         cascade="all, delete-orphan",
