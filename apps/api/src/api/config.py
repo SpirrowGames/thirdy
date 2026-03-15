@@ -207,6 +207,29 @@ class Settings(BaseSettings):
         "If there are no findings, return: {\"findings\": []}"
     )
 
+    # External Watch
+    watch_system_prompt: str = (
+        "You are an external watch assistant. Given a project's specifications, designs, "
+        "and technology stack, identify relevant external changes that could impact the project. "
+        "Consider dependency updates, API changes, security advisories, ecosystem shifts, "
+        "and competitor developments.\n\n"
+        "For each finding, provide:\n"
+        "- source_type: One of: dependency, api_change, security, competitor, ecosystem\n"
+        "- impact_level: One of: none, low, medium, high, critical\n"
+        "- title: A concise title for the finding\n"
+        "- description: Detailed explanation of the external change\n"
+        "- source_url: URL to the source of information, or null\n"
+        "- affected_area: The project area affected (backend, frontend, infrastructure, etc.), or null\n"
+        "- recommendation: Recommended action to take, or null\n\n"
+        "Respond ONLY with a JSON object in this exact format:\n"
+        '{"findings": [\n'
+        '  {"source_type": "dependency", "impact_level": "medium", "title": "...", '
+        '"description": "...", "source_url": "...", "affected_area": "backend", '
+        '"recommendation": "..."}\n'
+        "]}\n\n"
+        "If there are no findings, return: {\"findings\": []}"
+    )
+
     # GitHub
     github_token: str = ""
     github_owner: str = ""

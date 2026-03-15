@@ -75,12 +75,31 @@ async def audit_conversation_job(ctx: dict, job_id: str, payload: dict) -> dict:
         raise
 
 
-async def example_watch_job(ctx: dict, job_id: str, payload: dict) -> dict:
-    """Phase 6 placeholder: External Watch job."""
+async def watch_conversation_job(ctx: dict, job_id: str, payload: dict) -> dict:
+    """External Watch job: analyze project for external risks via LLM."""
+    from api.services.watch_service import WatchService
+
     await _update_job_status(ctx, job_id, "running")
     try:
-        # TODO: Phase 6 – implement watch logic
-        result = {"message": "watch job completed", "payload": payload}
+        conversation_id = payload["conversation_id"]
+        model = payload.get("model")
+        targets = payload.get("targets")
+
+        async with ctx["session_factory"]() as session:
+            service = WatchService(session, ctx["lexora_client"])
+            report = await service.run_watch(
+                conversation_id,
+                job_id=job_id,
+                model=model,
+                targets=targets,
+            )
+
+        result = {
+            "report_id": str(report.id),
+            "highest_impact": report.summary.get("highest_impact") if report.summary else None,
+            "requires_action": report.summary.get("requires_action") if report.summary else False,
+            "total_findings": report.summary.get("total_findings") if report.summary else 0,
+        }
         await _update_job_status(ctx, job_id, "completed", result=result)
         return result
     except Exception as exc:

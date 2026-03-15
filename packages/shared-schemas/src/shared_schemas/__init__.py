@@ -14,6 +14,7 @@ from .voice import VoiceTranscriptStatus, TranscriptSegment, VoiceTranscriptRead
 from .github_issue import IssueStatus, GitHubIssueRead, GitHubIssueUpdate, IssueStructureRequest, IssueCreateRequest
 from .background_job import BackgroundJobRead, BackgroundJobEnqueue
 from .audit_report import FindingSeverity, FindingCategory, AuditFinding, AuditSummary, AuditReportRead, AuditTriggerRequest, AuditTriggerResponse
+from .watch_report import WatchSourceType, WatchImpactLevel, WatchFinding, WatchSummary, WatchReportRead, WatchTriggerRequest, WatchTriggerResponse
 
 __all__ = [
     "BaseSchema",
@@ -85,4 +86,11 @@ __all__ = [
     "AuditReportRead",
     "AuditTriggerRequest",
     "AuditTriggerResponse",
+    "WatchSourceType",
+    "WatchImpactLevel",
+    "WatchFinding",
+    "WatchSummary",
+    "WatchReportRead",
+    "WatchTriggerRequest",
+    "WatchTriggerResponse",
 ]
