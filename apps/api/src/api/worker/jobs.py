@@ -1,7 +1,4 @@
-"""Job functions for ARQ workers.
-
-Phase 6 placeholders for Internal Audit and External Watch jobs.
-"""
+"""Job functions for ARQ workers."""
 import logging
 from datetime import datetime, timezone
 
@@ -47,12 +44,30 @@ async def _update_job_status(
         await session.commit()
 
 
-async def example_audit_job(ctx: dict, job_id: str, payload: dict) -> dict:
-    """Phase 6 placeholder: Internal Audit job."""
+async def audit_conversation_job(ctx: dict, job_id: str, payload: dict) -> dict:
+    """Internal Audit job: run LLM-based audit on conversation artifacts."""
+    from api.services.audit_service import AuditService
+
     await _update_job_status(ctx, job_id, "running")
     try:
-        # TODO: Phase 6 – implement audit logic
-        result = {"message": "audit job completed", "payload": payload}
+        conversation_id = payload["conversation_id"]
+        model = payload.get("model")
+        scope = payload.get("scope", "full")
+
+        async with ctx["session_factory"]() as session:
+            service = AuditService(session, ctx["lexora_client"])
+            report = await service.run_audit(
+                conversation_id,
+                job_id=job_id,
+                model=model,
+                scope=scope,
+            )
+
+        result = {
+            "report_id": str(report.id),
+            "score": report.summary.get("overall_score") if report.summary else None,
+            "badge": report.summary.get("quality_badge") if report.summary else None,
+        }
         await _update_job_status(ctx, job_id, "completed", result=result)
         return result
     except Exception as exc:

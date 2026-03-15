@@ -11,5 +11,6 @@ from .vote import VoteSession, Vote
 from .voice_transcript import VoiceTranscript
 from .github_issue import GitHubIssue
 from .background_job import BackgroundJob
+from .audit_report import AuditReport
 
-__all__ = ["User", "Conversation", "Message", "Specification", "DecisionPoint", "DecisionOption", "Design", "GeneratedTask", "GeneratedCode", "PullRequest", "VoteSession", "Vote", "VoiceTranscript", "GitHubIssue", "BackgroundJob"]
+__all__ = ["User", "Conversation", "Message", "Specification", "DecisionPoint", "DecisionOption", "Design", "GeneratedTask", "GeneratedCode", "PullRequest", "VoteSession", "Vote", "VoiceTranscript", "GitHubIssue", "BackgroundJob", "AuditReport"]

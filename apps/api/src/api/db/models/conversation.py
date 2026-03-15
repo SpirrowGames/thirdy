@@ -45,3 +45,6 @@ class Conversation(TimestampMixin, Base):
     github_issues: Mapped[list["GitHubIssue"]] = relationship(
         back_populates="conversation", cascade="all, delete-orphan"
     )
+    audit_reports: Mapped[list["AuditReport"]] = relationship(
+        back_populates="conversation", cascade="all, delete-orphan"
+    )

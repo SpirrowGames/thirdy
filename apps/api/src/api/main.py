@@ -74,6 +74,7 @@ def create_app() -> FastAPI:
     from api.routers.voice import router as voice_router
     from api.routers.github_issues import router as github_issues_router
     from api.routers.jobs import router as jobs_router
+    from api.routers.audits import router as audits_router
 
     app.include_router(health_router)
     app.include_router(auth_router)
@@ -89,6 +90,7 @@ def create_app() -> FastAPI:
     app.include_router(voice_router)
     app.include_router(github_issues_router)
     app.include_router(jobs_router)
+    app.include_router(audits_router)
 
     return app
 

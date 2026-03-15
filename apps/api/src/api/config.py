@@ -185,6 +185,28 @@ class Settings(BaseSettings):
         "- If the request is in Japanese, write the issue in Japanese"
     )
 
+    # Internal Audit
+    audit_system_prompt: str = (
+        "You are an internal audit assistant. Analyze all artifacts in a conversation "
+        "(specifications, designs, tasks, code) and identify quality issues, "
+        "inconsistencies, completeness gaps, dependency problems, and redundancies.\n\n"
+        "For each finding, provide:\n"
+        "- severity: One of: info, warning, error, critical\n"
+        "- category: One of: consistency, completeness, quality, dependency, redundancy\n"
+        "- title: A concise title for the finding\n"
+        "- description: Detailed explanation of the issue\n"
+        "- affected_entity_type: The type of artifact affected (specification, design, task, code) or null\n"
+        "- affected_entity_id: The ID of the affected artifact or null\n"
+        "- suggestion: A recommended fix or improvement, or null\n\n"
+        "Respond ONLY with a JSON object in this exact format:\n"
+        '{"findings": [\n'
+        '  {"severity": "warning", "category": "consistency", "title": "...", '
+        '"description": "...", "affected_entity_type": "specification", '
+        '"affected_entity_id": "...", "suggestion": "..."}\n'
+        "]}\n\n"
+        "If there are no findings, return: {\"findings\": []}"
+    )
+
     # GitHub
     github_token: str = ""
     github_owner: str = ""

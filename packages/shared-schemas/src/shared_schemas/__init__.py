@@ -13,6 +13,7 @@ from .vote import VoteSessionStatus, VoteRead, VoteTally, VoteSessionRead, VoteS
 from .voice import VoiceTranscriptStatus, TranscriptSegment, VoiceTranscriptRead, VoiceTranscribeRequest
 from .github_issue import IssueStatus, GitHubIssueRead, GitHubIssueUpdate, IssueStructureRequest, IssueCreateRequest
 from .background_job import BackgroundJobRead, BackgroundJobEnqueue
+from .audit_report import FindingSeverity, FindingCategory, AuditFinding, AuditSummary, AuditReportRead, AuditTriggerRequest, AuditTriggerResponse
 
 __all__ = [
     "BaseSchema",
@@ -77,4 +78,11 @@ __all__ = [
     "IssueCreateRequest",
     "BackgroundJobRead",
     "BackgroundJobEnqueue",
+    "FindingSeverity",
+    "FindingCategory",
+    "AuditFinding",
+    "AuditSummary",
+    "AuditReportRead",
+    "AuditTriggerRequest",
+    "AuditTriggerResponse",
 ]

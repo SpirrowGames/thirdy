@@ -1,6 +1,10 @@
 """ARQ WorkerSettings – entry point for `arq api.worker.settings.WorkerSettings`."""
+import httpx
+from llm_client import LexoraClient
+
+from api.config import settings
 from api.db.engine import async_session
-from api.worker.jobs import example_audit_job, example_watch_job
+from api.worker.jobs import audit_conversation_job, example_watch_job
 from api.worker.redis_pool import get_redis_settings
 
 
@@ -8,18 +12,28 @@ async def startup(ctx: dict) -> None:
     """Inject shared resources into worker context."""
     ctx["session_factory"] = async_session
 
+    http_client = httpx.AsyncClient()
+    ctx["http_client"] = http_client
+    ctx["lexora_client"] = LexoraClient(
+        http_client=http_client,
+        base_url=settings.lexora_base_url,
+        default_model=settings.lexora_default_model,
+    )
+
 
 async def shutdown(ctx: dict) -> None:
     """Cleanup worker resources."""
-    pass
+    http_client = ctx.get("http_client")
+    if http_client is not None:
+        await http_client.aclose()
 
 
 class WorkerSettings:
-    functions = [example_audit_job, example_watch_job]
+    functions = [audit_conversation_job, example_watch_job]
     redis_settings = get_redis_settings()
     on_startup = startup
     on_shutdown = shutdown
     max_jobs = 10
     job_timeout = 300
     # cron_jobs – Phase 6 で有効化
-    # cron_jobs = [cron(example_audit_job, hour=0, minute=0)]
+    # cron_jobs = [cron(audit_conversation_job, hour=0, minute=0)]
