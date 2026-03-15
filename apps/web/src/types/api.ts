@@ -1,0 +1,145 @@
+// TypeScript mirrors of Pydantic schemas (packages/shared-schemas)
+
+// --- Auth ---
+export interface TokenResponse {
+  access_token: string;
+  token_type: string;
+}
+
+// --- User ---
+export interface UserRead {
+  id: string;
+  email: string;
+  name: string;
+  picture: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+// --- Conversation ---
+export interface ConversationCreate {
+  title?: string | null;
+}
+
+export interface ConversationUpdate {
+  title?: string | null;
+}
+
+export interface ConversationRead {
+  id: string;
+  user_id: string;
+  title: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+// --- Message ---
+export type MessageRole = "user" | "assistant" | "system";
+
+export interface MessageRead {
+  id: string;
+  conversation_id: string;
+  role: MessageRole;
+  content: string;
+  created_at: string;
+}
+
+export interface ChatSendRequest {
+  conversation_id?: string | null;
+  content: string;
+  model?: string | null;
+}
+
+// --- Specification ---
+export type SpecStatus = "draft" | "in_review" | "approved";
+
+export interface SpecRead {
+  id: string;
+  conversation_id: string;
+  title: string;
+  content: string;
+  status: SpecStatus;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SpecUpdate {
+  title?: string | null;
+  status?: SpecStatus | null;
+  content?: string | null;
+}
+
+export interface SpecExtractRequest {
+  model?: string | null;
+}
+
+// --- Decision ---
+export type DecisionStatus = "pending" | "resolved" | "dismissed";
+
+export interface DecisionOptionRead {
+  id: string;
+  label: string;
+  description: string | null;
+  pros: string[];
+  cons: string[];
+  sort_order: number;
+}
+
+export interface DecisionPointRead {
+  id: string;
+  conversation_id: string;
+  question: string;
+  context: string;
+  recommendation: string | null;
+  status: DecisionStatus;
+  resolved_option_id: string | null;
+  resolution_note: string | null;
+  options: DecisionOptionRead[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DecisionPointUpdate {
+  status?: DecisionStatus | null;
+  resolved_option_id?: string | null;
+  resolution_note?: string | null;
+}
+
+export interface DecisionDetectRequest {
+  model?: string | null;
+}
+
+// --- SSE Events ---
+export interface SSEMessageSaved {
+  conversation_id: string;
+  message_id: string;
+}
+
+export interface SSEToken {
+  content: string;
+}
+
+export interface SSEDone {
+  conversation_id: string;
+  message_id: string;
+}
+
+export interface SSEError {
+  detail: string;
+}
+
+export interface SSEExtractionStarted {
+  conversation_id: string;
+  spec_id: string | null;
+  mode: "create" | "update";
+}
+
+export interface SSEDetectionStarted {
+  conversation_id: string;
+}
+
+export interface SSEDecisionDone {
+  conversation_id: string;
+  count: number;
+  decision_point_ids: string[];
+}

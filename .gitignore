@@ -9,3 +9,8 @@ build/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+
+# Node / Next.js
+node_modules/
+.next/
+.env.local
