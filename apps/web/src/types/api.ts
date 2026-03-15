@@ -214,6 +214,67 @@ export interface PRCreateRequest {
   code_id: string;
 }
 
+// --- Vote ---
+export type VoteSessionStatus = "open" | "closed" | "split";
+
+export interface VoteRead {
+  id: string;
+  vote_session_id: string;
+  option_id: string;
+  voter_name: string;
+  comment: string | null;
+  created_at: string;
+}
+
+export interface VoteTally {
+  option_id: string;
+  option_label: string;
+  count: number;
+  percentage: number;
+  voters: string[];
+}
+
+export interface VoteSessionRead {
+  id: string;
+  decision_point_id: string;
+  status: VoteSessionStatus;
+  share_token: string;
+  deadline: string | null;
+  votes: VoteRead[];
+  tally: VoteTally[];
+  total_votes: number;
+  created_at: string;
+}
+
+export interface VoteSessionCreate {
+  decision_point_id: string;
+  deadline?: string | null;
+}
+
+export interface VoteCast {
+  option_id: string;
+  voter_name: string;
+  voter_token: string;
+  comment?: string | null;
+}
+
+export interface MeetingSuggestion {
+  subject: string;
+  description: string;
+  ics_content: string;
+}
+
+export interface PublicVoteSession {
+  session: VoteSessionRead;
+  decision: {
+    id: string;
+    question: string;
+    context: string;
+    recommendation: string | null;
+    options: { id: string; label: string; description: string | null }[];
+  };
+}
+
 // --- SSE Events ---
 export interface SSEMessageSaved {
   conversation_id: string;

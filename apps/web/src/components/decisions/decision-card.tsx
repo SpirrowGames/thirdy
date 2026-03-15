@@ -11,6 +11,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { OptionSelector } from "./option-selector";
+import { useVoteSessions } from "@/hooks/use-votes";
+import { VoteSessionCard } from "@/components/votes/vote-session-card";
 
 const STATUS_COLORS: Record<DecisionStatus, string> = {
   pending: "bg-orange-500/10 text-orange-600",
@@ -38,6 +40,24 @@ export function DecisionCard({
   const [expanded, setExpanded] = useState(decision.status === "pending");
   const isPending = decision.status === "pending";
 
+  const {
+    sessions,
+    createSession,
+    closeSession,
+    getMeetingSuggestion,
+  } = useVoteSessions(decision.id);
+
+  const [isCreatingVote, setIsCreatingVote] = useState(false);
+
+  const handleStartVote = async () => {
+    setIsCreatingVote(true);
+    try {
+      await createSession();
+    } finally {
+      setIsCreatingVote(false);
+    }
+  };
+
   return (
     <Card>
       <CardHeader className="pb-2">
@@ -61,14 +81,27 @@ export function DecisionCard({
         </p>
 
         {isPending && (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="mb-2 h-6 text-xs"
-            onClick={() => setExpanded(!expanded)}
-          >
-            {expanded ? "Hide options" : "Show options"}
-          </Button>
+          <div className="flex gap-2 mb-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 text-xs"
+              onClick={() => setExpanded(!expanded)}
+            >
+              {expanded ? "Hide options" : "Show options"}
+            </Button>
+            {sessions.length === 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-6 text-xs"
+                onClick={handleStartVote}
+                disabled={isCreatingVote}
+              >
+                {isCreatingVote ? "Creating..." : "Start Vote"}
+              </Button>
+            )}
+          </div>
         )}
 
         {expanded && isPending && (
@@ -79,6 +112,20 @@ export function DecisionCard({
             }
             onDismiss={(note) => onDismiss(decision.id, note)}
           />
+        )}
+
+        {sessions.length > 0 && (
+          <div className="mt-3 space-y-2">
+            {sessions.map((s) => (
+              <VoteSessionCard
+                key={s.id}
+                session={s}
+                options={decision.options}
+                onClose={closeSession}
+                onGetMeetingSuggestion={getMeetingSuggestion}
+              />
+            ))}
+          </div>
         )}
 
         {decision.status === "resolved" && decision.resolution_note && (

@@ -40,6 +40,10 @@ class DecisionPoint(TimestampMixin, Base):
         cascade="all, delete-orphan",
         foreign_keys="DecisionOption.decision_point_id",
     )
+    vote_sessions: Mapped[list["VoteSession"]] = relationship(
+        back_populates="decision_point",
+        cascade="all, delete-orphan",
+    )
 
 
 class DecisionOption(TimestampMixin, Base):

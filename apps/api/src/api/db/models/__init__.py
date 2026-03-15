@@ -7,5 +7,6 @@ from .design import Design
 from .generated_task import GeneratedTask
 from .generated_code import GeneratedCode
 from .pull_request import PullRequest
+from .vote import VoteSession, Vote
 
-__all__ = ["User", "Conversation", "Message", "Specification", "DecisionPoint", "DecisionOption", "Design", "GeneratedTask", "GeneratedCode", "PullRequest"]
+__all__ = ["User", "Conversation", "Message", "Specification", "DecisionPoint", "DecisionOption", "Design", "GeneratedTask", "GeneratedCode", "PullRequest", "VoteSession", "Vote"]
