@@ -11,6 +11,7 @@ class BaseSchema(BaseModel):
 class HealthResponse(BaseSchema):
     status: str
     db_connected: bool
+    redis_connected: bool = False
 
 
 class PaginationParams(BaseModel):

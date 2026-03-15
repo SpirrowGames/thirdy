@@ -5,6 +5,9 @@ class Settings(BaseSettings):
     # Database
     database_url: str = "postgresql+asyncpg://thirdy:thirdy@localhost:5432/thirdy"
 
+    # Redis
+    redis_url: str = "redis://localhost:6379/0"
+
     # JWT
     jwt_secret_key: str = "change-me-in-production"
     jwt_algorithm: str = "HS256"

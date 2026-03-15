@@ -10,6 +10,7 @@ from starlette.middleware.sessions import SessionMiddleware
 from api.config import settings
 from api.db.engine import async_session, engine
 from api.services.whisper_service import WhisperService
+from api.worker.redis_pool import create_redis_pool
 
 
 @asynccontextmanager
@@ -32,9 +33,13 @@ async def lifespan(app: FastAPI):
     # Initialize Whisper service
     app.state.whisper_service = WhisperService(model_size=settings.whisper_model_size)
 
+    # Initialize Redis pool
+    app.state.redis_pool = await create_redis_pool()
+
     yield
 
     # Cleanup
+    await app.state.redis_pool.aclose()
     await http_client.aclose()
     await engine.dispose()
 
@@ -68,6 +73,7 @@ def create_app() -> FastAPI:
     from api.routers.votes import router as votes_router
     from api.routers.voice import router as voice_router
     from api.routers.github_issues import router as github_issues_router
+    from api.routers.jobs import router as jobs_router
 
     app.include_router(health_router)
     app.include_router(auth_router)
@@ -82,6 +88,7 @@ def create_app() -> FastAPI:
     app.include_router(votes_router)
     app.include_router(voice_router)
     app.include_router(github_issues_router)
+    app.include_router(jobs_router)
 
     return app
 

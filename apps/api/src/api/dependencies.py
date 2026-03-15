@@ -1,6 +1,7 @@
 from collections.abc import AsyncGenerator
 from uuid import UUID
 
+from arq.connections import ArqRedis
 from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from llm_client import LexoraClient
@@ -10,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from api.auth.jwt import decode_access_token
 from api.db.engine import async_session
 from api.db.models import User
+from api.services.background_job_service import BackgroundJobService
 
 bearer_scheme = HTTPBearer()
 
@@ -47,3 +49,17 @@ def get_whisper_service(request: Request):
     from api.services.whisper_service import WhisperService
     service: WhisperService = request.app.state.whisper_service
     return service
+
+
+def get_redis_pool(request: Request) -> ArqRedis:
+    return request.app.state.redis_pool
+
+
+async def get_background_job_service(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+) -> BackgroundJobService:
+    return BackgroundJobService(
+        redis_pool=request.app.state.redis_pool,
+        db=db,
+    )

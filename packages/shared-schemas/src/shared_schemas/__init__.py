@@ -12,6 +12,7 @@ from .pull_request import PRStatus, PullRequestRead, PullRequestUpdate, PRCreate
 from .vote import VoteSessionStatus, VoteRead, VoteTally, VoteSessionRead, VoteSessionCreate, VoteCast, MeetingSuggestion, CalendarEventPreset, CalendarEventCreate, CalendarEventResponse
 from .voice import VoiceTranscriptStatus, TranscriptSegment, VoiceTranscriptRead, VoiceTranscribeRequest
 from .github_issue import IssueStatus, GitHubIssueRead, GitHubIssueUpdate, IssueStructureRequest, IssueCreateRequest
+from .background_job import BackgroundJobRead, BackgroundJobEnqueue
 
 __all__ = [
     "BaseSchema",
@@ -74,4 +75,6 @@ __all__ = [
     "GitHubIssueUpdate",
     "IssueStructureRequest",
     "IssueCreateRequest",
+    "BackgroundJobRead",
+    "BackgroundJobEnqueue",
 ]
