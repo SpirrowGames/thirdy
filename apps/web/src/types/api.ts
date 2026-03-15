@@ -12,6 +12,7 @@ export interface UserRead {
   email: string;
   name: string;
   picture: string | null;
+  google_calendar_connected: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -262,6 +263,23 @@ export interface MeetingSuggestion {
   subject: string;
   description: string;
   ics_content: string;
+}
+
+export type CalendarEventPreset = "quick_sync" | "discussion" | "deep_dive";
+
+export interface CalendarEventCreate {
+  vote_session_id: string;
+  preset: CalendarEventPreset;
+  attendee_emails: string[];
+  start_time?: string | null;
+}
+
+export interface CalendarEventResponse {
+  event_id: string;
+  html_link: string;
+  summary: string;
+  start: string;
+  end: string;
 }
 
 export interface PublicVoteSession {

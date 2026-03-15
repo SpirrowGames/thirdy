@@ -56,3 +56,24 @@ class MeetingSuggestion(BaseSchema):
     subject: str
     description: str
     ics_content: str
+
+
+class CalendarEventPreset(StrEnum):
+    QUICK_SYNC = "quick_sync"
+    DISCUSSION = "discussion"
+    DEEP_DIVE = "deep_dive"
+
+
+class CalendarEventCreate(BaseSchema):
+    vote_session_id: UUID
+    preset: CalendarEventPreset
+    attendee_emails: list[str] = []
+    start_time: datetime | None = None
+
+
+class CalendarEventResponse(BaseSchema):
+    event_id: str
+    html_link: str
+    summary: str
+    start: datetime
+    end: datetime

@@ -108,7 +108,7 @@ export function VoteSessionCard({
         </div>
 
         {meetingSuggestion && (
-          <MeetingSuggestion suggestion={meetingSuggestion} />
+          <MeetingSuggestion suggestion={meetingSuggestion} sessionId={session.id} />
         )}
       </CardContent>
     </Card>

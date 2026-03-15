@@ -9,7 +9,7 @@ from .design import DesignStatus, DesignRead, DesignUpdate, DesignDecomposeReque
 from .generated_task import TaskPriority, TaskStatus, GeneratedTaskRead, GeneratedTaskUpdate, TaskGenerateRequest
 from .generated_code import CodeStatus, GeneratedCodeRead, GeneratedCodeUpdate, CodeGenerateRequest
 from .pull_request import PRStatus, PullRequestRead, PullRequestUpdate, PRCreateRequest
-from .vote import VoteSessionStatus, VoteRead, VoteTally, VoteSessionRead, VoteSessionCreate, VoteCast, MeetingSuggestion
+from .vote import VoteSessionStatus, VoteRead, VoteTally, VoteSessionRead, VoteSessionCreate, VoteCast, MeetingSuggestion, CalendarEventPreset, CalendarEventCreate, CalendarEventResponse
 
 __all__ = [
     "BaseSchema",
@@ -60,4 +60,7 @@ __all__ = [
     "VoteSessionCreate",
     "VoteCast",
     "MeetingSuggestion",
+    "CalendarEventPreset",
+    "CalendarEventCreate",
+    "CalendarEventResponse",
 ]

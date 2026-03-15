@@ -5,6 +5,7 @@ import json
 import logging
 import secrets
 from collections.abc import AsyncGenerator
+from datetime import datetime, timedelta, timezone
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -16,8 +17,11 @@ from starlette.responses import StreamingResponse
 
 from api.db.models import Conversation, DecisionOption, DecisionPoint, User, VoteSession, Vote
 from api.dependencies import get_current_user, get_db
+from api.services.google_calendar import PRESET_DURATIONS, create_event
 from api.services.vote_analyzer import compute_tally, detect_split, generate_meeting_suggestion
 from shared_schemas.vote import (
+    CalendarEventCreate,
+    CalendarEventResponse,
     MeetingSuggestion,
     VoteCast,
     VoteRead,
@@ -228,6 +232,76 @@ async def get_meeting_suggestion(
 
     tally = compute_tally(session.votes, dp.options)
     return generate_meeting_suggestion(dp.question, tally)
+
+
+@router.post(
+    "/vote-sessions/{session_id}/calendar-event",
+    response_model=CalendarEventResponse,
+)
+async def create_calendar_event(
+    session_id: UUID,
+    body: CalendarEventCreate,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    if not user.google_refresh_token:
+        raise HTTPException(
+            status_code=400,
+            detail="Google Calendar not connected. Please connect first.",
+        )
+
+    result = await db.execute(
+        select(VoteSession)
+        .options(selectinload(VoteSession.votes))
+        .where(VoteSession.id == session_id)
+    )
+    session = result.scalar_one_or_none()
+    if session is None:
+        raise HTTPException(status_code=404, detail="Vote session not found")
+
+    dp_result = await db.execute(
+        select(DecisionPoint)
+        .join(Conversation, DecisionPoint.conversation_id == Conversation.id)
+        .options(selectinload(DecisionPoint.options))
+        .where(
+            DecisionPoint.id == session.decision_point_id,
+            Conversation.user_id == user.id,
+        )
+    )
+    dp = dp_result.scalar_one_or_none()
+    if dp is None:
+        raise HTTPException(status_code=404, detail="Decision point not found")
+
+    tally = compute_tally(session.votes, dp.options)
+    suggestion = generate_meeting_suggestion(dp.question, tally)
+
+    duration = PRESET_DURATIONS.get(body.preset, 30)
+    start_time = body.start_time or (
+        datetime.now(timezone.utc).replace(hour=10, minute=0, second=0, microsecond=0)
+        + timedelta(days=1)
+    )
+
+    event_data = await create_event(
+        user=user,
+        db=db,
+        summary=suggestion.subject,
+        description=suggestion.description,
+        start=start_time,
+        duration_minutes=duration,
+        attendees=body.attendee_emails,
+    )
+
+    def _parse_dt(dt_obj: dict) -> datetime:
+        raw = dt_obj.get("dateTime") or dt_obj.get("date", "")
+        return datetime.fromisoformat(raw)
+
+    return CalendarEventResponse(
+        event_id=event_data["id"],
+        html_link=event_data["htmlLink"],
+        summary=event_data.get("summary", suggestion.subject),
+        start=_parse_dt(event_data["start"]),
+        end=_parse_dt(event_data["end"]),
+    )
 
 
 # --- Public endpoints (no auth) ---
