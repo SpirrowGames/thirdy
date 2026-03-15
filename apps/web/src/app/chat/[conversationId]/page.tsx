@@ -3,12 +3,16 @@
 import { useState } from "react";
 import { useParams } from "next/navigation";
 import { useChat } from "@/hooks/use-chat";
+import { useSpecs } from "@/hooks/use-specs";
+import { useDesigns } from "@/hooks/use-designs";
+import { useTasks } from "@/hooks/use-tasks";
 import { MessageList } from "@/components/chat/message-list";
 import { ChatInput } from "@/components/chat/chat-input";
 import { SpecPanel } from "@/components/specs/spec-panel";
 import { DesignPanel } from "@/components/designs/design-panel";
 import { DecisionPanel } from "@/components/decisions/decision-panel";
 import { TaskPanel } from "@/components/tasks/task-panel";
+import { PipelineProgress } from "@/components/pipeline/pipeline-progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 
@@ -16,6 +20,9 @@ export default function ConversationPage() {
   const params = useParams();
   const conversationId = params.conversationId as string;
   const [panelOpen, setPanelOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("specs");
+  const [preselectedSpecId, setPreselectedSpecId] = useState<string>();
+  const [preselectedDesignId, setPreselectedDesignId] = useState<string>();
 
   const {
     messages,
@@ -25,6 +32,24 @@ export default function ConversationPage() {
     error,
     sendMessage,
   } = useChat({ conversationId, onConversationCreated: undefined });
+
+  const { specs } = useSpecs(conversationId);
+  const { designs } = useDesigns(conversationId);
+  const { tasks } = useTasks(conversationId);
+
+  const hasApprovedSpec = specs.some((s) => s.status === "approved");
+  const hasApprovedDesign = designs.some((d) => d.status === "approved");
+  const hasGeneratedTasks = tasks.length > 0;
+
+  const handleSpecApproved = (specId: string) => {
+    setActiveTab("designs");
+    setPreselectedSpecId(specId);
+  };
+
+  const handleDesignApproved = (designId: string) => {
+    setActiveTab("tasks");
+    setPreselectedDesignId(designId);
+  };
 
   return (
     <div className="flex flex-1 overflow-hidden">
@@ -70,24 +95,41 @@ export default function ConversationPage() {
       {/* Right panel */}
       {panelOpen && (
         <aside className="hidden w-[360px] shrink-0 border-l md:flex md:flex-col">
-          <Tabs defaultValue="specs" className="flex h-full flex-col">
-            <TabsList className="mx-3 mt-3">
+          <PipelineProgress
+            specsApproved={hasApprovedSpec}
+            designsApproved={hasApprovedDesign}
+            tasksGenerated={hasGeneratedTasks}
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+          />
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="flex h-full flex-col">
+            <TabsList className="mx-3 mt-1">
               <TabsTrigger value="specs">Specs</TabsTrigger>
               <TabsTrigger value="designs">Designs</TabsTrigger>
               <TabsTrigger value="decisions">Decisions</TabsTrigger>
               <TabsTrigger value="tasks">Tasks</TabsTrigger>
             </TabsList>
             <TabsContent value="specs" className="flex-1 overflow-hidden">
-              <SpecPanel conversationId={conversationId} />
+              <SpecPanel
+                conversationId={conversationId}
+                onSpecApproved={handleSpecApproved}
+              />
             </TabsContent>
             <TabsContent value="designs" className="flex-1 overflow-hidden">
-              <DesignPanel conversationId={conversationId} />
+              <DesignPanel
+                conversationId={conversationId}
+                onDesignApproved={handleDesignApproved}
+                preselectedSpecId={preselectedSpecId}
+              />
             </TabsContent>
             <TabsContent value="decisions" className="flex-1 overflow-hidden">
               <DecisionPanel conversationId={conversationId} />
             </TabsContent>
             <TabsContent value="tasks" className="flex-1 overflow-hidden">
-              <TaskPanel conversationId={conversationId} />
+              <TaskPanel
+                conversationId={conversationId}
+                preselectedDesignId={preselectedDesignId}
+              />
             </TabsContent>
           </Tabs>
         </aside>

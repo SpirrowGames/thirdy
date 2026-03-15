@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTasks } from "@/hooks/use-tasks";
 import { useDesigns } from "@/hooks/use-designs";
 import { Button } from "@/components/ui/button";
@@ -16,9 +16,10 @@ import { TaskCard } from "./task-card";
 
 interface TaskPanelProps {
   conversationId: string | null;
+  preselectedDesignId?: string;
 }
 
-export function TaskPanel({ conversationId }: TaskPanelProps) {
+export function TaskPanel({ conversationId, preselectedDesignId }: TaskPanelProps) {
   const {
     tasks,
     isLoading,
@@ -33,6 +34,12 @@ export function TaskPanel({ conversationId }: TaskPanelProps) {
   const approvedDesigns = designs.filter((d) => d.status === "approved");
 
   const [selectedDesignId, setSelectedDesignId] = useState<string>("");
+
+  useEffect(() => {
+    if (preselectedDesignId) {
+      setSelectedDesignId(preselectedDesignId);
+    }
+  }, [preselectedDesignId]);
 
   return (
     <div className="flex h-full flex-col">

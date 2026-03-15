@@ -9,9 +9,10 @@ import { SpecPreview } from "./spec-preview";
 
 interface SpecPanelProps {
   conversationId: string | null;
+  onSpecApproved?: (specId: string) => void;
 }
 
-export function SpecPanel({ conversationId }: SpecPanelProps) {
+export function SpecPanel({ conversationId, onSpecApproved }: SpecPanelProps) {
   const {
     specs,
     isLoading,
@@ -74,9 +75,12 @@ export function SpecPanel({ conversationId }: SpecPanelProps) {
               <SpecPreview
                 key={spec.id}
                 spec={spec}
-                onStatusChange={(id, status) =>
-                  updateSpec(id, { status })
-                }
+                onStatusChange={(id, status) => {
+                  updateSpec(id, { status });
+                  if (status === "approved" && onSpecApproved) {
+                    onSpecApproved(id);
+                  }
+                }}
                 onDelete={deleteSpec}
               />
             ))}

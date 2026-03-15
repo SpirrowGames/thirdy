@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { useDesigns } from "@/hooks/use-designs";
@@ -18,9 +18,11 @@ import { DesignCard } from "./design-card";
 
 interface DesignPanelProps {
   conversationId: string | null;
+  onDesignApproved?: (designId: string) => void;
+  preselectedSpecId?: string;
 }
 
-export function DesignPanel({ conversationId }: DesignPanelProps) {
+export function DesignPanel({ conversationId, onDesignApproved, preselectedSpecId }: DesignPanelProps) {
   const {
     designs,
     isLoading,
@@ -36,6 +38,12 @@ export function DesignPanel({ conversationId }: DesignPanelProps) {
   const approvedSpecs = specs.filter((s) => s.status === "approved");
 
   const [selectedSpecId, setSelectedSpecId] = useState<string>("");
+
+  useEffect(() => {
+    if (preselectedSpecId) {
+      setSelectedSpecId(preselectedSpecId);
+    }
+  }, [preselectedSpecId]);
 
   return (
     <div className="flex h-full flex-col">
@@ -100,9 +108,12 @@ export function DesignPanel({ conversationId }: DesignPanelProps) {
               <DesignCard
                 key={design.id}
                 design={design}
-                onStatusChange={(id, status) =>
-                  updateDesign(id, { status })
-                }
+                onStatusChange={(id, status) => {
+                  updateDesign(id, { status });
+                  if (status === "approved" && onDesignApproved) {
+                    onDesignApproved(id);
+                  }
+                }}
                 onDelete={deleteDesign}
               />
             ))}

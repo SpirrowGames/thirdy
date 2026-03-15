@@ -1,12 +1,13 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import useSWR from "swr";
+import useSWR, { useSWRConfig } from "swr";
 import type { DesignRead, DesignUpdate, SSEToken } from "@/types/api";
 import { api } from "@/lib/api-client";
 import { streamSSE } from "@/lib/sse";
 
 export function useDesigns(conversationId: string | null) {
+  const { mutate: globalMutate } = useSWRConfig();
   const {
     data: designs,
     mutate,
@@ -54,6 +55,12 @@ export function useDesigns(conversationId: string | null) {
                 setIsDecomposing(false);
                 setDecompositionContent("");
                 mutate();
+                // Invalidate decisions SWR cache so Decisions tab picks up new decision_points
+                globalMutate(
+                  (key: unknown) => typeof key === "string" && key.includes("/decisions"),
+                  undefined,
+                  { revalidate: true },
+                );
                 break;
               }
               case "error": {
@@ -71,7 +78,7 @@ export function useDesigns(conversationId: string | null) {
         },
       );
     },
-    [conversationId, isDecomposing, mutate],
+    [conversationId, isDecomposing, mutate, globalMutate],
   );
 
   const updateDesign = async (designId: string, update: DesignUpdate) => {
