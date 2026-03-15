@@ -60,6 +60,7 @@ def create_app() -> FastAPI:
     from api.routers.designs import router as designs_router
     from api.routers.tasks import router as tasks_router
     from api.routers.codes import router as codes_router
+    from api.routers.pull_requests import router as pull_requests_router
 
     app.include_router(health_router)
     app.include_router(auth_router)
@@ -70,6 +71,7 @@ def create_app() -> FastAPI:
     app.include_router(designs_router)
     app.include_router(tasks_router)
     app.include_router(codes_router)
+    app.include_router(pull_requests_router)
 
     return app
 

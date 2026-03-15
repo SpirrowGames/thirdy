@@ -139,6 +139,12 @@ class Settings(BaseSettings):
         "Output ONLY the Markdown document with code blocks, no preamble."
     )
 
+    # GitHub
+    github_token: str = ""
+    github_owner: str = ""
+    github_repo: str = ""
+    github_base_branch: str = "main"
+
     model_config = {"env_file": ".env", "extra": "ignore"}
 
 

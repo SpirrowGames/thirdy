@@ -11,6 +11,7 @@ interface PipelineProgressProps {
   designsApproved: boolean;
   tasksGenerated: boolean;
   codesGenerated: boolean;
+  prsCreated: boolean;
   activeTab: string;
   onTabChange: (tab: string) => void;
 }
@@ -20,6 +21,7 @@ export function PipelineProgress({
   designsApproved,
   tasksGenerated,
   codesGenerated,
+  prsCreated,
   activeTab,
   onTabChange,
 }: PipelineProgressProps) {
@@ -28,6 +30,7 @@ export function PipelineProgress({
     { key: "designs", label: "Design", completed: designsApproved },
     { key: "tasks", label: "Tasks", completed: tasksGenerated },
     { key: "codes", label: "Code", completed: codesGenerated },
+    { key: "prs", label: "PR", completed: prsCreated },
   ];
 
   return (

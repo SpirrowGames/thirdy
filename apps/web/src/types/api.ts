@@ -188,6 +188,32 @@ export interface CodeGenerateRequest {
   model?: string | null;
 }
 
+// --- Pull Request ---
+export type PRStatus = "creating" | "created" | "merged" | "closed" | "failed";
+
+export interface PullRequestRead {
+  id: string;
+  conversation_id: string;
+  code_id: string;
+  pr_number: number | null;
+  pr_url: string | null;
+  branch_name: string;
+  title: string;
+  description: string;
+  status: PRStatus;
+  error_message: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PullRequestUpdate {
+  status?: PRStatus | null;
+}
+
+export interface PRCreateRequest {
+  code_id: string;
+}
+
 // --- SSE Events ---
 export interface SSEMessageSaved {
   conversation_id: string;

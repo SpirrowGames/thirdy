@@ -19,9 +19,10 @@ import { CodeCard } from "./code-card";
 interface CodePanelProps {
   conversationId: string | null;
   preselectedTaskId?: string;
+  onCodeApproved?: (codeId: string) => void;
 }
 
-export function CodePanel({ conversationId, preselectedTaskId }: CodePanelProps) {
+export function CodePanel({ conversationId, preselectedTaskId, onCodeApproved }: CodePanelProps) {
   const {
     codes,
     isLoading,
@@ -110,9 +111,12 @@ export function CodePanel({ conversationId, preselectedTaskId }: CodePanelProps)
                 key={code.id}
                 code={code}
                 taskTitle={taskTitleMap.get(code.task_id)}
-                onStatusChange={(id, status) =>
-                  updateCode(id, { status })
-                }
+                onStatusChange={(id, newStatus) => {
+                  updateCode(id, { status: newStatus });
+                  if (newStatus === "approved" && onCodeApproved) {
+                    onCodeApproved(id);
+                  }
+                }}
                 onDelete={deleteCode}
               />
             ))}

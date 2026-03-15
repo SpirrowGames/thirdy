@@ -7,6 +7,7 @@ import { useSpecs } from "@/hooks/use-specs";
 import { useDesigns } from "@/hooks/use-designs";
 import { useTasks } from "@/hooks/use-tasks";
 import { useCodes } from "@/hooks/use-codes";
+import { usePullRequests } from "@/hooks/use-pull-requests";
 import { MessageList } from "@/components/chat/message-list";
 import { ChatInput } from "@/components/chat/chat-input";
 import { SpecPanel } from "@/components/specs/spec-panel";
@@ -14,6 +15,7 @@ import { DesignPanel } from "@/components/designs/design-panel";
 import { DecisionPanel } from "@/components/decisions/decision-panel";
 import { TaskPanel } from "@/components/tasks/task-panel";
 import { CodePanel } from "@/components/codes/code-panel";
+import { PRPanel } from "@/components/pull-requests/pr-panel";
 import { PipelineProgress } from "@/components/pipeline/pipeline-progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -26,6 +28,7 @@ export default function ConversationPage() {
   const [preselectedSpecId, setPreselectedSpecId] = useState<string>();
   const [preselectedDesignId, setPreselectedDesignId] = useState<string>();
   const [preselectedTaskId, setPreselectedTaskId] = useState<string>();
+  const [preselectedCodeId, setPreselectedCodeId] = useState<string>();
 
   const {
     messages,
@@ -40,11 +43,13 @@ export default function ConversationPage() {
   const { designs } = useDesigns(conversationId);
   const { tasks } = useTasks(conversationId);
   const { codes } = useCodes(conversationId);
+  const { pullRequests } = usePullRequests(conversationId);
 
   const hasApprovedSpec = specs.some((s) => s.status === "approved");
   const hasApprovedDesign = designs.some((d) => d.status === "approved");
   const hasGeneratedTasks = tasks.length > 0;
   const hasGeneratedCode = codes.length > 0;
+  const hasPullRequests = pullRequests.length > 0;
 
   const handleSpecApproved = (specId: string) => {
     setActiveTab("designs");
@@ -59,6 +64,11 @@ export default function ConversationPage() {
   const handleTaskDone = (taskId: string) => {
     setActiveTab("codes");
     setPreselectedTaskId(taskId);
+  };
+
+  const handleCodeApproved = (codeId: string) => {
+    setActiveTab("prs");
+    setPreselectedCodeId(codeId);
   };
 
   return (
@@ -110,6 +120,7 @@ export default function ConversationPage() {
             designsApproved={hasApprovedDesign}
             tasksGenerated={hasGeneratedTasks}
             codesGenerated={hasGeneratedCode}
+            prsCreated={hasPullRequests}
             activeTab={activeTab}
             onTabChange={setActiveTab}
           />
@@ -120,6 +131,7 @@ export default function ConversationPage() {
               <TabsTrigger value="decisions">Decisions</TabsTrigger>
               <TabsTrigger value="tasks">Tasks</TabsTrigger>
               <TabsTrigger value="codes">Code</TabsTrigger>
+              <TabsTrigger value="prs">PRs</TabsTrigger>
             </TabsList>
             <TabsContent value="specs" className="flex-1 overflow-hidden">
               <SpecPanel
@@ -148,6 +160,13 @@ export default function ConversationPage() {
               <CodePanel
                 conversationId={conversationId}
                 preselectedTaskId={preselectedTaskId}
+                onCodeApproved={handleCodeApproved}
+              />
+            </TabsContent>
+            <TabsContent value="prs" className="flex-1 overflow-hidden">
+              <PRPanel
+                conversationId={conversationId}
+                preselectedCodeId={preselectedCodeId}
               />
             </TabsContent>
           </Tabs>

@@ -8,6 +8,7 @@ from .decision import DecisionStatus, DecisionOptionRead, DecisionPointRead, Dec
 from .design import DesignStatus, DesignRead, DesignUpdate, DesignDecomposeRequest
 from .generated_task import TaskPriority, TaskStatus, GeneratedTaskRead, GeneratedTaskUpdate, TaskGenerateRequest
 from .generated_code import CodeStatus, GeneratedCodeRead, GeneratedCodeUpdate, CodeGenerateRequest
+from .pull_request import PRStatus, PullRequestRead, PullRequestUpdate, PRCreateRequest
 
 __all__ = [
     "BaseSchema",
@@ -47,4 +48,8 @@ __all__ = [
     "GeneratedCodeRead",
     "GeneratedCodeUpdate",
     "CodeGenerateRequest",
+    "PRStatus",
+    "PullRequestRead",
+    "PullRequestUpdate",
+    "PRCreateRequest",
 ]

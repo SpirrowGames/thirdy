@@ -23,3 +23,6 @@ class GeneratedCode(TimestampMixin, Base):
 
     conversation: Mapped["Conversation"] = relationship(back_populates="generated_codes")
     task: Mapped["GeneratedTask"] = relationship(back_populates="generated_codes")
+    pull_requests: Mapped[list["PullRequest"]] = relationship(
+        back_populates="code", cascade="all, delete-orphan"
+    )

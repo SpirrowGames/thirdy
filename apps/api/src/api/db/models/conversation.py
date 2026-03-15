@@ -36,3 +36,6 @@ class Conversation(TimestampMixin, Base):
     generated_codes: Mapped[list["GeneratedCode"]] = relationship(
         back_populates="conversation", cascade="all, delete-orphan"
     )
+    pull_requests: Mapped[list["PullRequest"]] = relationship(
+        back_populates="conversation", cascade="all, delete-orphan"
+    )
