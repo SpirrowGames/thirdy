@@ -11,6 +11,8 @@ import { useCodes } from "@/hooks/use-codes";
 import { usePullRequests } from "@/hooks/use-pull-requests";
 import { useVoiceTranscripts } from "@/hooks/use-voice";
 import { useGitHubIssues } from "@/hooks/use-github-issues";
+import { useAudits } from "@/hooks/use-audits";
+import { useWatches } from "@/hooks/use-watches";
 import { MessageList } from "@/components/chat/message-list";
 import { ChatInput } from "@/components/chat/chat-input";
 import { SpecPanel } from "@/components/specs/spec-panel";
@@ -21,6 +23,8 @@ import { CodePanel } from "@/components/codes/code-panel";
 import { PRPanel } from "@/components/pull-requests/pr-panel";
 import { VoicePanel } from "@/components/voice/voice-panel";
 import { IssuePanel } from "@/components/issues/issue-panel";
+import { AuditPanel } from "@/components/audits/audit-panel";
+import { WatchPanel } from "@/components/watches/watch-panel";
 import { PipelineProgress } from "@/components/pipeline/pipeline-progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -52,6 +56,8 @@ export default function ConversationPage() {
   const { pullRequests } = usePullRequests(conversationId);
   const { transcripts } = useVoiceTranscripts(conversationId);
   const { issues } = useGitHubIssues(conversationId);
+  const { reports: auditReports } = useAudits(conversationId);
+  const { reports: watchReports } = useWatches(conversationId);
 
   const hasApprovedSpec = specs.some((s) => s.status === "approved");
   const hasApprovedDesign = designs.some((d) => d.status === "approved");
@@ -63,6 +69,8 @@ export default function ConversationPage() {
   const hasPullRequests = pullRequests.length > 0;
   const hasVoiceTranscripts = transcripts.some((t) => t.status === "completed");
   const hasCreatedIssues = issues.some((i) => i.status === "created");
+  const hasAuditReports = auditReports.some((r) => r.status === "completed");
+  const hasWatchReports = watchReports.some((r) => r.status === "completed");
 
   const handleSpecApproved = (specId: string) => {
     setActiveTab("designs");
@@ -148,6 +156,8 @@ export default function ConversationPage() {
             prsCreated={hasPullRequests}
             voiceTranscribed={hasVoiceTranscripts}
             issuesCreated={hasCreatedIssues}
+            auditsCompleted={hasAuditReports}
+            watchesCompleted={hasWatchReports}
             activeTab={activeTab}
             onTabChange={setActiveTab}
           />
@@ -163,6 +173,8 @@ export default function ConversationPage() {
               <TabsTrigger value="prs">PRs</TabsTrigger>
               <TabsTrigger value="voice">Voice</TabsTrigger>
               <TabsTrigger value="issues">Issues</TabsTrigger>
+              <TabsTrigger value="audits">Audit</TabsTrigger>
+              <TabsTrigger value="watches">Watch</TabsTrigger>
             </TabsList>
             <TabsContent value="specs" className="flex-1 overflow-hidden">
               <SpecPanel
@@ -205,6 +217,12 @@ export default function ConversationPage() {
             </TabsContent>
             <TabsContent value="issues" className="flex-1 overflow-hidden">
               <IssuePanel conversationId={conversationId} />
+            </TabsContent>
+            <TabsContent value="audits" className="flex-1 overflow-hidden">
+              <AuditPanel conversationId={conversationId} />
+            </TabsContent>
+            <TabsContent value="watches" className="flex-1 overflow-hidden">
+              <WatchPanel conversationId={conversationId} />
             </TabsContent>
           </Tabs>
         </aside>

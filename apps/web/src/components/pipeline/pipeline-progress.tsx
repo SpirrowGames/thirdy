@@ -15,6 +15,8 @@ interface PipelineProgressProps {
   prsCreated: boolean;
   voiceTranscribed: boolean;
   issuesCreated: boolean;
+  auditsCompleted: boolean;
+  watchesCompleted: boolean;
   activeTab: string;
   onTabChange: (tab: string) => void;
 }
@@ -28,6 +30,8 @@ export function PipelineProgress({
   prsCreated,
   voiceTranscribed,
   issuesCreated,
+  auditsCompleted,
+  watchesCompleted,
   activeTab,
   onTabChange,
 }: PipelineProgressProps) {
@@ -40,6 +44,8 @@ export function PipelineProgress({
     { key: "prs", label: "PR", completed: prsCreated },
     { key: "voice", label: "Voice", completed: voiceTranscribed },
     { key: "issues", label: "Issues", completed: issuesCreated },
+    { key: "audits", label: "Audit", completed: auditsCompleted },
+    { key: "watches", label: "Watch", completed: watchesCompleted },
   ];
 
   return (
