@@ -9,6 +9,7 @@ interface PipelineStep {
 interface PipelineProgressProps {
   specsApproved: boolean;
   designsApproved: boolean;
+  decisionsResolved: boolean;
   tasksGenerated: boolean;
   codesGenerated: boolean;
   prsCreated: boolean;
@@ -19,6 +20,7 @@ interface PipelineProgressProps {
 export function PipelineProgress({
   specsApproved,
   designsApproved,
+  decisionsResolved,
   tasksGenerated,
   codesGenerated,
   prsCreated,
@@ -28,6 +30,7 @@ export function PipelineProgress({
   const steps: PipelineStep[] = [
     { key: "specs", label: "Spec", completed: specsApproved },
     { key: "designs", label: "Design", completed: designsApproved },
+    { key: "decisions", label: "Decisions", completed: decisionsResolved },
     { key: "tasks", label: "Tasks", completed: tasksGenerated },
     { key: "codes", label: "Code", completed: codesGenerated },
     { key: "prs", label: "PR", completed: prsCreated },

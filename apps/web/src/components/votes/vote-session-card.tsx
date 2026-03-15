@@ -4,8 +4,10 @@ import { useCallback, useState } from "react";
 import type {
   MeetingSuggestion as MeetingSuggestionType,
   VoteSessionRead,
+  VoteTally as VoteTallyType,
   DecisionOptionRead,
 } from "@/types/api";
+import { useVoteSessionSSE } from "@/hooks/use-votes";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -28,6 +30,7 @@ interface VoteSessionCardProps {
   options: DecisionOptionRead[];
   onClose: (sessionId: string) => Promise<unknown>;
   onGetMeetingSuggestion: (sessionId: string) => Promise<MeetingSuggestionType>;
+  onMutate?: () => void;
 }
 
 export function VoteSessionCard({
@@ -35,11 +38,29 @@ export function VoteSessionCard({
   options,
   onClose,
   onGetMeetingSuggestion,
+  onMutate,
 }: VoteSessionCardProps) {
   const [isClosing, setIsClosing] = useState(false);
   const [meetingSuggestion, setMeetingSuggestion] =
     useState<MeetingSuggestionType | null>(null);
   const [copied, setCopied] = useState(false);
+  const [liveTally, setLiveTally] = useState<VoteTallyType[] | null>(null);
+  const [liveTotalVotes, setLiveTotalVotes] = useState<number | null>(null);
+
+  useVoteSessionSSE(
+    session.share_token,
+    session.status,
+    (tally, totalVotes) => {
+      setLiveTally(tally);
+      setLiveTotalVotes(totalVotes);
+    },
+    () => {
+      onMutate?.();
+    },
+  );
+
+  const displayTally = liveTally ?? session.tally;
+  const displayTotalVotes = liveTotalVotes ?? session.total_votes;
 
   const shareUrl = `${typeof window !== "undefined" ? window.location.origin : ""}/vote/${session.share_token}`;
 
@@ -82,7 +103,7 @@ export function VoteSessionCard({
         )}
       </CardHeader>
       <CardContent className="space-y-3">
-        <VoteTally tally={session.tally} totalVotes={session.total_votes} />
+        <VoteTally tally={displayTally} totalVotes={displayTotalVotes} />
 
         <div className="flex gap-2 flex-wrap">
           <Button size="sm" variant="outline" onClick={copyShareLink}>

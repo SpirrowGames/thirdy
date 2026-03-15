@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { useChat } from "@/hooks/use-chat";
 import { useSpecs } from "@/hooks/use-specs";
 import { useDesigns } from "@/hooks/use-designs";
+import { useDecisions } from "@/hooks/use-decisions";
 import { useTasks } from "@/hooks/use-tasks";
 import { useCodes } from "@/hooks/use-codes";
 import { usePullRequests } from "@/hooks/use-pull-requests";
@@ -41,12 +42,16 @@ export default function ConversationPage() {
 
   const { specs } = useSpecs(conversationId);
   const { designs } = useDesigns(conversationId);
+  const { decisions } = useDecisions(conversationId);
   const { tasks } = useTasks(conversationId);
   const { codes } = useCodes(conversationId);
   const { pullRequests } = usePullRequests(conversationId);
 
   const hasApprovedSpec = specs.some((s) => s.status === "approved");
   const hasApprovedDesign = designs.some((d) => d.status === "approved");
+  const pendingDecisions = decisions.filter((d) => d.status === "pending");
+  const hasDecisionsResolved =
+    decisions.length === 0 || pendingDecisions.length === 0;
   const hasGeneratedTasks = tasks.length > 0;
   const hasGeneratedCode = codes.length > 0;
   const hasPullRequests = pullRequests.length > 0;
@@ -57,9 +62,20 @@ export default function ConversationPage() {
   };
 
   const handleDesignApproved = (designId: string) => {
-    setActiveTab("tasks");
+    if (pendingDecisions.length > 0) {
+      setActiveTab("decisions");
+    } else {
+      setActiveTab("tasks");
+    }
     setPreselectedDesignId(designId);
   };
+
+  // Auto-switch from decisions to tasks when all resolved
+  useEffect(() => {
+    if (activeTab === "decisions" && decisions.length > 0 && hasDecisionsResolved) {
+      setActiveTab("tasks");
+    }
+  }, [activeTab, decisions.length, hasDecisionsResolved]);
 
   const handleTaskDone = (taskId: string) => {
     setActiveTab("codes");
@@ -87,7 +103,7 @@ export default function ConversationPage() {
             className="h-7 text-xs"
             onClick={() => setPanelOpen(!panelOpen)}
           >
-            {panelOpen ? "Close Panel" : "Specs & Designs"}
+            {panelOpen ? "Close Panel" : "Pipeline"}
           </Button>
         </div>
 
@@ -118,6 +134,7 @@ export default function ConversationPage() {
           <PipelineProgress
             specsApproved={hasApprovedSpec}
             designsApproved={hasApprovedDesign}
+            decisionsResolved={hasDecisionsResolved}
             tasksGenerated={hasGeneratedTasks}
             codesGenerated={hasGeneratedCode}
             prsCreated={hasPullRequests}
@@ -128,7 +145,9 @@ export default function ConversationPage() {
             <TabsList className="mx-3 mt-1">
               <TabsTrigger value="specs">Specs</TabsTrigger>
               <TabsTrigger value="designs">Designs</TabsTrigger>
-              <TabsTrigger value="decisions">Decisions</TabsTrigger>
+              <TabsTrigger value="decisions">
+                Decisions{pendingDecisions.length > 0 ? ` (${pendingDecisions.length})` : ""}
+              </TabsTrigger>
               <TabsTrigger value="tasks">Tasks</TabsTrigger>
               <TabsTrigger value="codes">Code</TabsTrigger>
               <TabsTrigger value="prs">PRs</TabsTrigger>

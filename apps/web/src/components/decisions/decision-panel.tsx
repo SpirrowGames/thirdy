@@ -46,6 +46,16 @@ export function DecisionPanel({ conversationId }: DecisionPanelProps) {
         </div>
       )}
 
+      {decisions.length > 0 && (
+        <div className="border-b px-3 py-2 text-xs text-muted-foreground">
+          {decisions.filter((d) => d.status === "pending").length} pending
+          {" · "}
+          {decisions.filter((d) => d.status === "resolved").length} resolved
+          {" · "}
+          {decisions.filter((d) => d.status === "dismissed").length} dismissed
+        </div>
+      )}
+
       <ScrollArea className="flex-1 p-3">
         {isLoading ? (
           <div className="space-y-3">

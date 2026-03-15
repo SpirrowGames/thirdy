@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
+import { useGoogleCalendar } from "@/hooks/use-google-calendar";
 import { ConversationList } from "@/components/sidebar/conversation-list";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,6 +19,8 @@ export default function ChatLayout({
   children: React.ReactNode;
 }) {
   const { isAuthenticated, isLoading, user, logout } = useAuth();
+  const { connected: calendarConnected, connect: connectCalendar } =
+    useGoogleCalendar();
   const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -49,6 +52,22 @@ export default function ChatLayout({
                 {user.name}
               </span>
             )}
+            <button
+              onClick={calendarConnected ? undefined : connectCalendar}
+              className="relative text-sm"
+              title={
+                calendarConnected
+                  ? "Google Calendar connected"
+                  : "Connect Google Calendar"
+              }
+            >
+              <span className={calendarConnected ? "" : "opacity-40"}>
+                📅
+              </span>
+              {calendarConnected && (
+                <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-green-500" />
+              )}
+            </button>
             <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={logout}>
               Logout
             </Button>

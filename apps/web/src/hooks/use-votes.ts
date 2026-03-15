@@ -56,6 +56,41 @@ export function useVoteSessions(decisionId: string | null) {
   };
 }
 
+// --- SSE hook for dashboard realtime tally updates ---
+
+export function useVoteSessionSSE(
+  shareToken: string | null,
+  status: string,
+  onTallyUpdate: (tally: VoteTally[], totalVotes: number) => void,
+  onSessionClosed: () => void,
+) {
+  const onTallyRef = useRef(onTallyUpdate);
+  onTallyRef.current = onTallyUpdate;
+  const onClosedRef = useRef(onSessionClosed);
+  onClosedRef.current = onSessionClosed;
+
+  useEffect(() => {
+    if (!shareToken || status !== "open") return;
+
+    const es = new EventSource(
+      `${API_URL}/vote-sessions/${shareToken}/stream`,
+    );
+
+    es.addEventListener("tally_update", (e) => {
+      const data = JSON.parse(e.data);
+      onTallyRef.current(data.tally, data.total_votes);
+    });
+
+    es.addEventListener("session_closed", () => {
+      onClosedRef.current();
+    });
+
+    return () => {
+      es.close();
+    };
+  }, [shareToken, status]);
+}
+
 // --- Public hook for voting + SSE realtime ---
 
 function getVoterToken(): string {

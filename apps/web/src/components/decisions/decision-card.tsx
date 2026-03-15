@@ -45,6 +45,7 @@ export function DecisionCard({
     createSession,
     closeSession,
     getMeetingSuggestion,
+    mutate,
   } = useVoteSessions(decision.id);
 
   const [isCreatingVote, setIsCreatingVote] = useState(false);
@@ -123,6 +124,7 @@ export function DecisionCard({
                 options={decision.options}
                 onClose={closeSession}
                 onGetMeetingSuggestion={getMeetingSuggestion}
+                onMutate={mutate}
               />
             ))}
           </div>
