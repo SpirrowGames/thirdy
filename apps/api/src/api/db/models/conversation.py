@@ -30,3 +30,6 @@ class Conversation(TimestampMixin, Base):
     designs: Mapped[list["Design"]] = relationship(
         back_populates="conversation", cascade="all, delete-orphan"
     )
+    generated_tasks: Mapped[list["GeneratedTask"]] = relationship(
+        back_populates="conversation", cascade="all, delete-orphan"
+    )

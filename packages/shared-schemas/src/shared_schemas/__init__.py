@@ -6,6 +6,7 @@ from .message import MessageRole, MessageCreate, MessageRead, ChatSendRequest
 from .specification import SpecStatus, SpecCreate, SpecRead, SpecUpdate, SpecExtractRequest
 from .decision import DecisionStatus, DecisionOptionRead, DecisionPointRead, DecisionPointUpdate, DecisionDetectRequest
 from .design import DesignStatus, DesignRead, DesignUpdate, DesignDecomposeRequest
+from .generated_task import TaskPriority, TaskStatus, GeneratedTaskRead, GeneratedTaskUpdate, TaskGenerateRequest
 
 __all__ = [
     "BaseSchema",
@@ -36,4 +37,9 @@ __all__ = [
     "DesignRead",
     "DesignUpdate",
     "DesignDecomposeRequest",
+    "TaskPriority",
+    "TaskStatus",
+    "GeneratedTaskRead",
+    "GeneratedTaskUpdate",
+    "TaskGenerateRequest",
 ]

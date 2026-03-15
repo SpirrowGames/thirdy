@@ -28,3 +28,6 @@ class Design(TimestampMixin, Base):
         back_populates="design",
         foreign_keys="DecisionPoint.design_id",
     )
+    generated_tasks: Mapped[list["GeneratedTask"]] = relationship(
+        back_populates="design", cascade="all, delete-orphan"
+    )

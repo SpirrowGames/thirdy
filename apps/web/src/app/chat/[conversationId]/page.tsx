@@ -8,6 +8,7 @@ import { ChatInput } from "@/components/chat/chat-input";
 import { SpecPanel } from "@/components/specs/spec-panel";
 import { DesignPanel } from "@/components/designs/design-panel";
 import { DecisionPanel } from "@/components/decisions/decision-panel";
+import { TaskPanel } from "@/components/tasks/task-panel";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 
@@ -74,6 +75,7 @@ export default function ConversationPage() {
               <TabsTrigger value="specs">Specs</TabsTrigger>
               <TabsTrigger value="designs">Designs</TabsTrigger>
               <TabsTrigger value="decisions">Decisions</TabsTrigger>
+              <TabsTrigger value="tasks">Tasks</TabsTrigger>
             </TabsList>
             <TabsContent value="specs" className="flex-1 overflow-hidden">
               <SpecPanel conversationId={conversationId} />
@@ -83,6 +85,9 @@ export default function ConversationPage() {
             </TabsContent>
             <TabsContent value="decisions" className="flex-1 overflow-hidden">
               <DecisionPanel conversationId={conversationId} />
+            </TabsContent>
+            <TabsContent value="tasks" className="flex-1 overflow-hidden">
+              <TaskPanel conversationId={conversationId} />
             </TabsContent>
           </Tabs>
         </aside>

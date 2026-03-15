@@ -135,6 +135,36 @@ export interface DecisionDetectRequest {
   model?: string | null;
 }
 
+// --- Generated Task ---
+export type TaskPriority = "low" | "medium" | "high" | "critical";
+export type TaskStatus = "pending" | "in_progress" | "done" | "skipped";
+
+export interface GeneratedTaskRead {
+  id: string;
+  conversation_id: string;
+  design_id: string;
+  title: string;
+  description: string;
+  priority: TaskPriority;
+  status: TaskStatus;
+  dependencies: string[];
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface GeneratedTaskUpdate {
+  title?: string | null;
+  description?: string | null;
+  priority?: TaskPriority | null;
+  status?: TaskStatus | null;
+}
+
+export interface TaskGenerateRequest {
+  design_id: string;
+  model?: string | null;
+}
+
 // --- SSE Events ---
 export interface SSEMessageSaved {
   conversation_id: string;
@@ -186,4 +216,19 @@ export interface SSEDecisionDone {
   conversation_id: string;
   count: number;
   decision_point_ids: string[];
+}
+
+export interface SSEGenerationStarted {
+  conversation_id: string;
+  design_id: string;
+}
+
+export interface SSETaskFound {
+  task: GeneratedTaskRead;
+}
+
+export interface SSETaskDone {
+  conversation_id: string;
+  design_id: string;
+  task_count: number;
 }

@@ -98,6 +98,24 @@ class Settings(BaseSettings):
         "If there are no decision points, return: {\"decision_points\": []}"
     )
 
+    # Task generation
+    task_generation_system_prompt: str = (
+        "You are a task planning assistant. Given a design document, generate a list of "
+        "implementation tasks with dependencies.\n\n"
+        "For each task, provide:\n"
+        "- title: A concise task title\n"
+        "- description: Detailed description of what needs to be done\n"
+        "- priority: One of: low, medium, high, critical\n"
+        "- dependencies: List of task titles that must be completed first (use exact titles)\n\n"
+        "Order tasks so that dependencies come before dependents.\n\n"
+        "Respond ONLY with a JSON object in this exact format:\n"
+        '{"tasks": [\n'
+        '  {"title": "...", "description": "...", "priority": "medium", "dependencies": []},\n'
+        '  {"title": "...", "description": "...", "priority": "high", "dependencies": ["first task title"]}\n'
+        "]}\n\n"
+        "If there are no tasks to generate, return: {\"tasks\": []}"
+    )
+
     model_config = {"env_file": ".env", "extra": "ignore"}
 
 
