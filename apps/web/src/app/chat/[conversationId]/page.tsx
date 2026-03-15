@@ -9,6 +9,8 @@ import { useDecisions } from "@/hooks/use-decisions";
 import { useTasks } from "@/hooks/use-tasks";
 import { useCodes } from "@/hooks/use-codes";
 import { usePullRequests } from "@/hooks/use-pull-requests";
+import { useVoiceTranscripts } from "@/hooks/use-voice";
+import { useGitHubIssues } from "@/hooks/use-github-issues";
 import { MessageList } from "@/components/chat/message-list";
 import { ChatInput } from "@/components/chat/chat-input";
 import { SpecPanel } from "@/components/specs/spec-panel";
@@ -17,6 +19,8 @@ import { DecisionPanel } from "@/components/decisions/decision-panel";
 import { TaskPanel } from "@/components/tasks/task-panel";
 import { CodePanel } from "@/components/codes/code-panel";
 import { PRPanel } from "@/components/pull-requests/pr-panel";
+import { VoicePanel } from "@/components/voice/voice-panel";
+import { IssuePanel } from "@/components/issues/issue-panel";
 import { PipelineProgress } from "@/components/pipeline/pipeline-progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -46,6 +50,8 @@ export default function ConversationPage() {
   const { tasks } = useTasks(conversationId);
   const { codes } = useCodes(conversationId);
   const { pullRequests } = usePullRequests(conversationId);
+  const { transcripts } = useVoiceTranscripts(conversationId);
+  const { issues } = useGitHubIssues(conversationId);
 
   const hasApprovedSpec = specs.some((s) => s.status === "approved");
   const hasApprovedDesign = designs.some((d) => d.status === "approved");
@@ -55,6 +61,8 @@ export default function ConversationPage() {
   const hasGeneratedTasks = tasks.length > 0;
   const hasGeneratedCode = codes.length > 0;
   const hasPullRequests = pullRequests.length > 0;
+  const hasVoiceTranscripts = transcripts.some((t) => t.status === "completed");
+  const hasCreatedIssues = issues.some((i) => i.status === "created");
 
   const handleSpecApproved = (specId: string) => {
     setActiveTab("designs");
@@ -138,6 +146,8 @@ export default function ConversationPage() {
             tasksGenerated={hasGeneratedTasks}
             codesGenerated={hasGeneratedCode}
             prsCreated={hasPullRequests}
+            voiceTranscribed={hasVoiceTranscripts}
+            issuesCreated={hasCreatedIssues}
             activeTab={activeTab}
             onTabChange={setActiveTab}
           />
@@ -151,6 +161,8 @@ export default function ConversationPage() {
               <TabsTrigger value="tasks">Tasks</TabsTrigger>
               <TabsTrigger value="codes">Code</TabsTrigger>
               <TabsTrigger value="prs">PRs</TabsTrigger>
+              <TabsTrigger value="voice">Voice</TabsTrigger>
+              <TabsTrigger value="issues">Issues</TabsTrigger>
             </TabsList>
             <TabsContent value="specs" className="flex-1 overflow-hidden">
               <SpecPanel
@@ -187,6 +199,12 @@ export default function ConversationPage() {
                 conversationId={conversationId}
                 preselectedCodeId={preselectedCodeId}
               />
+            </TabsContent>
+            <TabsContent value="voice" className="flex-1 overflow-hidden">
+              <VoicePanel conversationId={conversationId} />
+            </TabsContent>
+            <TabsContent value="issues" className="flex-1 overflow-hidden">
+              <IssuePanel conversationId={conversationId} />
             </TabsContent>
           </Tabs>
         </aside>
