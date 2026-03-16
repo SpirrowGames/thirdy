@@ -5,7 +5,8 @@ from shared_schemas.background_job import (
     BackgroundJobRead,
 )
 
-from api.dependencies import get_background_job_service
+from api.db.models import User
+from api.dependencies import get_background_job_service, get_current_user
 from api.services.background_job_service import BackgroundJobService
 
 router = APIRouter(prefix="/jobs", tags=["jobs"])
@@ -17,6 +18,7 @@ async def list_jobs(
     status_filter: str | None = Query(None, alias="status"),
     limit: int = Query(50, ge=1, le=200),
     offset: int = Query(0, ge=0),
+    _current_user: User = Depends(get_current_user),
     service: BackgroundJobService = Depends(get_background_job_service),
 ):
     return await service.list_jobs(
@@ -27,6 +29,7 @@ async def list_jobs(
 @router.get("/{job_id}", response_model=BackgroundJobRead)
 async def get_job(
     job_id: str,
+    _current_user: User = Depends(get_current_user),
     service: BackgroundJobService = Depends(get_background_job_service),
 ):
     job = await service.get_job(job_id)
@@ -40,6 +43,7 @@ async def get_job(
 @router.post("", response_model=BackgroundJobRead, status_code=status.HTTP_201_CREATED)
 async def enqueue_job(
     body: BackgroundJobEnqueue,
+    _current_user: User = Depends(get_current_user),
     service: BackgroundJobService = Depends(get_background_job_service),
 ):
     return await service.enqueue(
