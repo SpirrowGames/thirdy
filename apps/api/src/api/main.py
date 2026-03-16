@@ -30,8 +30,13 @@ async def lifespan(app: FastAPI):
         default_model=settings.lexora_default_model,
     )
 
-    # Initialize Whisper service
-    app.state.whisper_service = WhisperService(model_size=settings.whisper_model_size)
+    # Initialize Whisper service (graceful: skip if model download fails)
+    try:
+        app.state.whisper_service = WhisperService(model_size=settings.whisper_model_size)
+    except Exception as e:
+        import logging
+        logging.getLogger("api").warning(f"Whisper service unavailable: {e}")
+        app.state.whisper_service = None
 
     # Initialize Redis pool
     app.state.redis_pool = await create_redis_pool()

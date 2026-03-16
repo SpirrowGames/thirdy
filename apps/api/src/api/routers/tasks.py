@@ -121,7 +121,7 @@ async def generate_tasks(
 
         try:
             llm_messages: list[ChatMessage] = [
-                ChatMessage(role="system", content=settings.task_generation_system_prompt),
+                ChatMessage(role="system", content=settings.localized_prompt(settings.task_generation_system_prompt)),
                 ChatMessage(
                     role="user",
                     content=(
@@ -173,6 +173,7 @@ async def generate_tasks(
                     task = result.scalar_one()
                     task.dependencies = json.dumps(dep_ids)
                     await stream_db.flush()
+                    await stream_db.refresh(task)
 
                     task_read = GeneratedTaskRead.model_validate(task)
                     yield _sse_event("task_found", task_read.model_dump(mode="json"))

@@ -127,7 +127,7 @@ class AuditService:
         user_content = "\n".join(parts)
 
         return [
-            {"role": "system", "content": settings.audit_system_prompt},
+            {"role": "system", "content": settings.localized_prompt(settings.audit_system_prompt)},
             {"role": "user", "content": user_content},
         ]
 

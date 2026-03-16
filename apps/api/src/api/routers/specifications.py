@@ -120,7 +120,7 @@ async def extract_specification(
     # Build LLM messages
     formatted = _format_messages(messages)
     llm_messages: list[ChatMessage] = [
-        ChatMessage(role="system", content=settings.spec_extraction_system_prompt),
+        ChatMessage(role="system", content=settings.localized_prompt(settings.spec_extraction_system_prompt)),
     ]
 
     if existing_spec is not None:

@@ -102,7 +102,7 @@ async def detect_decisions(
     # Build LLM messages
     formatted = _format_messages(messages)
     llm_messages: list[ChatMessage] = [
-        ChatMessage(role="system", content=settings.decision_detection_system_prompt),
+        ChatMessage(role="system", content=settings.localized_prompt(settings.decision_detection_system_prompt)),
         ChatMessage(
             role="user",
             content=(

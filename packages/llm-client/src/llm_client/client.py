@@ -21,20 +21,21 @@ class LexoraClient:
         return f"{self._base_url}/v1/chat/completions"
 
     async def complete(self, messages: list[ChatMessage], model: str | None = None) -> str:
-        """Non-streaming completion. Returns the assistant's response text."""
-        request = ChatCompletionRequest(
-            model=model or self._default_model,
-            messages=messages,
-            stream=False,
-        )
-        response = await self._http.post(
-            self.completions_url,
-            json=request.model_dump(),
-            timeout=120.0,
-        )
-        response.raise_for_status()
-        result = ChatCompletionResponse.model_validate(response.json())
-        return result.choices[0].message.content if result.choices and result.choices[0].message else ""
+        """Non-streaming completion built on streaming to avoid timeout on slow models."""
+        full = ""
+        async for token in self.stream(messages, model=model):
+            full += token
+        return self._strip_think_tags(full)
+
+    @staticmethod
+    def _strip_think_tags(text: str) -> str:
+        """Remove <think>...</think> blocks and markdown code fences from model output."""
+        import re
+        # Remove think blocks
+        text = re.sub(r"<think>[\s\S]*?</think>\s*", "", text)
+        # Remove markdown code fences (```json ... ```)
+        text = re.sub(r"```(?:json)?\s*\n?", "", text)
+        return text.strip()
 
     async def stream(self, messages: list[ChatMessage], model: str | None = None) -> AsyncGenerator[str]:
         """Streaming completion. Yields content tokens as strings."""
@@ -47,7 +48,7 @@ class LexoraClient:
             "POST",
             self.completions_url,
             json=request.model_dump(),
-            timeout=120.0,
+            timeout=300.0,
         ) as response:
             response.raise_for_status()
             async for line in response.aiter_lines():

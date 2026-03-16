@@ -80,7 +80,7 @@ async def chat(
 
     # Build LLM messages
     llm_messages: list[ChatMessage] = [
-        ChatMessage(role="system", content=settings.chat_system_prompt),
+        ChatMessage(role="system", content=settings.localized_prompt(settings.chat_system_prompt)),
     ]
     for msg in history_messages:
         llm_messages.append(ChatMessage(role=msg.role, content=msg.content))

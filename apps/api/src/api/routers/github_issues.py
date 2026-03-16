@@ -70,7 +70,7 @@ async def structure_issue(
         try:
             # Call LLM to structure the natural language into an issue
             messages = [
-                ChatMessage(role="system", content=settings.issue_structuring_system_prompt),
+                ChatMessage(role="system", content=settings.localized_prompt(settings.issue_structuring_system_prompt)),
                 ChatMessage(role="user", content=text),
             ]
 

@@ -47,6 +47,8 @@ export function useChat({ conversationId, onConversationCreated }: UseChatOption
       );
 
       let accumulated = "";
+      let displayed = "";
+      let lineBuffer = "";
 
       controllerRef.current = streamSSE(
         "/chat",
@@ -67,13 +69,25 @@ export function useChat({ conversationId, onConversationCreated }: UseChatOption
               case "token": {
                 const token = data as SSEToken;
                 accumulated += token.content;
-                setStreamingContent(accumulated);
+                lineBuffer += token.content;
+                // Flush buffer on newline
+                if (lineBuffer.includes("\n")) {
+                  displayed = accumulated;
+                  lineBuffer = "";
+                  setStreamingContent(displayed);
+                }
                 break;
               }
               case "done": {
-                setIsStreaming(false);
-                setStreamingContent("");
-                mutate();
+                // Flush remaining buffer so last line is visible
+                if (lineBuffer) {
+                  setStreamingContent(accumulated);
+                }
+                // mutate fetches the saved message from DB, then clear streaming
+                mutate().then(() => {
+                  setIsStreaming(false);
+                  setStreamingContent("");
+                });
                 break;
               }
               case "error": {

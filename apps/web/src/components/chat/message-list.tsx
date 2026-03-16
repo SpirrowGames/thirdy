@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import type { MessageRead } from "@/types/api";
 import { MessageBubble } from "./message-bubble";
 import { StreamingMessage } from "./streaming-message";
@@ -32,7 +31,7 @@ export function MessageList({
   }
 
   return (
-    <ScrollArea className="flex-1 px-4">
+    <div className="flex-1 overflow-y-auto px-4">
       <div className="mx-auto max-w-3xl space-y-4 py-4">
         {messages.map((msg) => (
           <MessageBubble key={msg.id} message={msg} />
@@ -40,6 +39,6 @@ export function MessageList({
         {isStreaming && <StreamingMessage content={streamingContent} />}
         <div ref={bottomRef} />
       </div>
-    </ScrollArea>
+    </div>
   );
 }

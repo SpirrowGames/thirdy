@@ -133,7 +133,7 @@ async def decompose_design(
 
     # Build LLM messages for design generation
     llm_messages: list[ChatMessage] = [
-        ChatMessage(role="system", content=settings.design_decomposition_system_prompt),
+        ChatMessage(role="system", content=settings.localized_prompt(settings.design_decomposition_system_prompt)),
     ]
 
     if existing_design is not None:
@@ -217,7 +217,7 @@ async def decompose_design(
 
             # Phase 2: Detect decision points from the design
             decision_llm_messages: list[ChatMessage] = [
-                ChatMessage(role="system", content=settings.design_decision_detection_system_prompt),
+                ChatMessage(role="system", content=settings.localized_prompt(settings.design_decision_detection_system_prompt)),
                 ChatMessage(
                     role="user",
                     content=(

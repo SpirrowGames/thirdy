@@ -106,7 +106,7 @@ export default function ConversationPage() {
   return (
     <div className="flex flex-1 overflow-hidden">
       {/* Chat area */}
-      <div className="flex flex-1 flex-col">
+      <div className="flex flex-1 flex-col min-h-0">
         <div className="flex items-center justify-between border-b px-4 py-3 md:pl-4 pl-12">
           <h1 className="text-sm font-medium truncate">
             {messages[0]?.content
@@ -146,7 +146,7 @@ export default function ConversationPage() {
 
       {/* Right panel */}
       {panelOpen && (
-        <aside className="hidden w-[360px] shrink-0 border-l md:flex md:flex-col">
+        <aside className="hidden w-[360px] shrink-0 border-l md:flex md:flex-col min-h-0">
           <PipelineProgress
             specsApproved={hasApprovedSpec}
             designsApproved={hasApprovedDesign}
@@ -161,7 +161,7 @@ export default function ConversationPage() {
             activeTab={activeTab}
             onTabChange={setActiveTab}
           />
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="flex h-full flex-col">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-1 min-h-0 flex-col">
             <TabsList className="mx-3 mt-1">
               <TabsTrigger value="specs">Specs</TabsTrigger>
               <TabsTrigger value="designs">Designs</TabsTrigger>
@@ -176,52 +176,52 @@ export default function ConversationPage() {
               <TabsTrigger value="audits">Audit</TabsTrigger>
               <TabsTrigger value="watches">Watch</TabsTrigger>
             </TabsList>
-            <TabsContent value="specs" className="flex-1 overflow-hidden">
+            <TabsContent value="specs" className="flex-1 overflow-y-auto">
               <SpecPanel
                 conversationId={conversationId}
                 onSpecApproved={handleSpecApproved}
               />
             </TabsContent>
-            <TabsContent value="designs" className="flex-1 overflow-hidden">
+            <TabsContent value="designs" className="flex-1 overflow-y-auto">
               <DesignPanel
                 conversationId={conversationId}
                 onDesignApproved={handleDesignApproved}
                 preselectedSpecId={preselectedSpecId}
               />
             </TabsContent>
-            <TabsContent value="decisions" className="flex-1 overflow-hidden">
+            <TabsContent value="decisions" className="flex-1 overflow-y-auto">
               <DecisionPanel conversationId={conversationId} />
             </TabsContent>
-            <TabsContent value="tasks" className="flex-1 overflow-hidden">
+            <TabsContent value="tasks" className="flex-1 overflow-y-auto">
               <TaskPanel
                 conversationId={conversationId}
                 preselectedDesignId={preselectedDesignId}
                 onTaskDone={handleTaskDone}
               />
             </TabsContent>
-            <TabsContent value="codes" className="flex-1 overflow-hidden">
+            <TabsContent value="codes" className="flex-1 overflow-y-auto">
               <CodePanel
                 conversationId={conversationId}
                 preselectedTaskId={preselectedTaskId}
                 onCodeApproved={handleCodeApproved}
               />
             </TabsContent>
-            <TabsContent value="prs" className="flex-1 overflow-hidden">
+            <TabsContent value="prs" className="flex-1 overflow-y-auto">
               <PRPanel
                 conversationId={conversationId}
                 preselectedCodeId={preselectedCodeId}
               />
             </TabsContent>
-            <TabsContent value="voice" className="flex-1 overflow-hidden">
+            <TabsContent value="voice" className="flex-1 overflow-y-auto">
               <VoicePanel conversationId={conversationId} />
             </TabsContent>
-            <TabsContent value="issues" className="flex-1 overflow-hidden">
+            <TabsContent value="issues" className="flex-1 overflow-y-auto">
               <IssuePanel conversationId={conversationId} />
             </TabsContent>
-            <TabsContent value="audits" className="flex-1 overflow-hidden">
+            <TabsContent value="audits" className="flex-1 overflow-y-auto">
               <AuditPanel conversationId={conversationId} />
             </TabsContent>
-            <TabsContent value="watches" className="flex-1 overflow-hidden">
+            <TabsContent value="watches" className="flex-1 overflow-y-auto">
               <WatchPanel conversationId={conversationId} />
             </TabsContent>
           </Tabs>

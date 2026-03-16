@@ -32,7 +32,7 @@ services:
       context: .
       dockerfile: apps/api/Dockerfile
     ports:
-      - "8000:8000"
+      - "${API_PORT:-8000}:8000"
     env_file: .env
     environment:
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-thirdy}:${POSTGRES_PASSWORD:-thirdy}@postgres:5432/${POSTGRES_DB:-thirdy}
@@ -65,7 +65,7 @@ services:
       args:
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
     ports:
-      - "3000:3000"
+      - "${WEB_PORT:-3000}:3000"
     depends_on:
       - api
 

@@ -123,7 +123,7 @@ async def transcribe_voice(
 
             from llm_client import ChatMessage
             classify_messages = [
-                ChatMessage(role="system", content=settings.voice_classification_system_prompt),
+                ChatMessage(role="system", content=settings.localized_prompt(settings.voice_classification_system_prompt)),
                 ChatMessage(role="user", content=full_text),
             ]
 

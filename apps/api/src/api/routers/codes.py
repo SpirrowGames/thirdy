@@ -148,7 +148,7 @@ async def generate_code(
             )
 
             llm_messages: list[ChatMessage] = [
-                ChatMessage(role="system", content=settings.code_generation_system_prompt),
+                ChatMessage(role="system", content=settings.localized_prompt(settings.code_generation_system_prompt)),
                 ChatMessage(role="user", content=user_content),
             ]
 

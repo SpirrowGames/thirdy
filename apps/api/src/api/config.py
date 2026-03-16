@@ -27,6 +27,7 @@ class Settings(BaseSettings):
     lexora_base_url: str = "http://sg-ai-server-01:8110"
     lexora_default_model: str = "gpt-4o"
     chat_history_limit: int = 50
+    output_language: str = ""
     chat_system_prompt: str = "You are a helpful AI assistant."
 
     # Specification extraction
@@ -237,6 +238,12 @@ class Settings(BaseSettings):
     github_base_branch: str = "main"
 
     model_config = {"env_file": ".env", "extra": "ignore"}
+
+    def localized_prompt(self, prompt: str) -> str:
+        """Append language instruction to a system prompt if output_language is set."""
+        if self.output_language:
+            return f"{prompt}\n\nIMPORTANT: Always respond in {self.output_language}."
+        return prompt
 
 
 settings = Settings()
