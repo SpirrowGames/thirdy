@@ -23,6 +23,7 @@ export function useChat({ conversationId, onConversationCreated }: UseChatOption
   const [isStreaming, setIsStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const controllerRef = useRef<AbortController | null>(null);
+  const timeoutRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const sendMessage = useCallback(
     (content: string) => {
@@ -49,6 +50,21 @@ export function useChat({ conversationId, onConversationCreated }: UseChatOption
       let accumulated = "";
       let displayed = "";
       let lineBuffer = "";
+      let lastTokenTime = Date.now();
+
+      // Token timeout: if no token received for 30s, treat as error
+      if (timeoutRef.current) clearInterval(timeoutRef.current);
+      const tokenTimeoutInterval = setInterval(() => {
+        if (Date.now() - lastTokenTime > 30000 && accumulated === "") {
+          // No tokens at all for 30s — likely LLM not responding
+          clearInterval(tokenTimeoutInterval);
+          controllerRef.current?.abort();
+          setError("応答がタイムアウトしました。LLMサーバーが応答していない可能性があります。");
+          setIsStreaming(false);
+          setStreamingContent("");
+        }
+      }, 5000);
+      timeoutRef.current = tokenTimeoutInterval;
 
       controllerRef.current = streamSSE(
         "/chat",
@@ -70,6 +86,7 @@ export function useChat({ conversationId, onConversationCreated }: UseChatOption
                 const token = data as SSEToken;
                 accumulated += token.content;
                 lineBuffer += token.content;
+                lastTokenTime = Date.now();
                 // Flush buffer on newline
                 if (lineBuffer.includes("\n")) {
                   displayed = accumulated;
@@ -79,6 +96,7 @@ export function useChat({ conversationId, onConversationCreated }: UseChatOption
                 break;
               }
               case "done": {
+                clearInterval(tokenTimeoutInterval);
                 // Flush remaining buffer so last line is visible
                 if (lineBuffer) {
                   setStreamingContent(accumulated);
@@ -91,6 +109,7 @@ export function useChat({ conversationId, onConversationCreated }: UseChatOption
                 break;
               }
               case "error": {
+                clearInterval(tokenTimeoutInterval);
                 const err = data as { detail: string };
                 setError(err.detail);
                 setIsStreaming(false);
@@ -100,6 +119,7 @@ export function useChat({ conversationId, onConversationCreated }: UseChatOption
             }
           },
           onError: (err) => {
+            clearInterval(tokenTimeoutInterval);
             setError(err.message);
             setIsStreaming(false);
             setStreamingContent("");
@@ -114,6 +134,7 @@ export function useChat({ conversationId, onConversationCreated }: UseChatOption
   );
 
   const stopStreaming = useCallback(() => {
+    if (timeoutRef.current) clearInterval(timeoutRef.current);
     controllerRef.current?.abort();
     setIsStreaming(false);
     setStreamingContent("");

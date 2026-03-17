@@ -106,6 +106,7 @@ export default function ConversationPage() {
     isLoadingMessages,
     error,
     sendMessage,
+    stopStreaming,
   } = useChat({ conversationId, onConversationCreated: undefined });
 
   const { specs } = useSpecs(conversationId);
@@ -293,7 +294,7 @@ export default function ConversationPage() {
           </div>
         )}
 
-        <ChatInput onSend={sendMessage} disabled={isStreaming} />
+        <ChatInput onSend={sendMessage} disabled={isStreaming} isStreaming={isStreaming} onCancel={stopStreaming} />
       </div>
 
       {/* Right panel */}
