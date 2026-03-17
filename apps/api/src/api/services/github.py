@@ -119,3 +119,30 @@ class GitHubClient:
             f"{self._base}/issues",
             json=payload,
         )
+
+    async def get_repo_tree(self, branch: str = "main") -> list[dict]:
+        """Get the full file tree of the repo (recursive)."""
+        data = await self._request(
+            "GET",
+            f"{self._base}/git/trees/{branch}",
+            params={"recursive": "1"},
+        )
+        return data.get("tree", [])
+
+    async def get_file_content(self, path: str, ref: str = "main") -> str | None:
+        """Get decoded text content of a file. Returns None if too large or binary."""
+        try:
+            data = await self._request(
+                "GET",
+                f"{self._base}/contents/{path}",
+                params={"ref": ref},
+            )
+            if data.get("encoding") == "base64" and data.get("content"):
+                return base64.b64decode(data["content"]).decode("utf-8", errors="replace")
+            return None
+        except (GitHubError, UnicodeDecodeError):
+            return None
+
+    async def get_repo_info(self) -> dict:
+        """Get basic repo metadata."""
+        return await self._request("GET", self._base)
