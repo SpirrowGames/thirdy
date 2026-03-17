@@ -53,6 +53,16 @@ export interface CreateRepoRequest {
   private?: boolean;
 }
 
+export interface RepoContextResponse {
+  owner: string;
+  repo: string;
+  default_branch: string;
+  description: string | null;
+  tree_summary: string;
+  file_count: number;
+  prompt_context: string;
+}
+
 // --- Message ---
 export type MessageRole = "user" | "assistant" | "system";
 

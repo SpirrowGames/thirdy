@@ -30,6 +30,7 @@ import { PipelineProgress } from "@/components/pipeline/pipeline-progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { RepoSelector } from "@/components/github/repo-selector";
+import { useRepoContext } from "@/hooks/use-repo-context";
 import { api } from "@/lib/api-client";
 import type { ConversationRead } from "@/types/api";
 
@@ -55,6 +56,10 @@ export default function ConversationPage() {
     });
     await mutateConversation();
   };
+
+  const { context: repoContext, isLoading: repoContextLoading, refresh: refreshRepoContext } = useRepoContext(
+    conversation?.github_repo ?? null
+  );
 
   // Resizable panel
   const PANEL_MIN = 280;
@@ -219,6 +224,28 @@ export default function ConversationPage() {
                 onChange={handleRepoChange}
               />
             </div>
+            {conversation?.github_repo && (
+              <button
+                onClick={() => refreshRepoContext()}
+                className="flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] text-muted-foreground hover:bg-accent transition-colors"
+                title={
+                  repoContextLoading
+                    ? "Loading repo context..."
+                    : repoContext
+                      ? `Context loaded (${repoContext.file_count} files)`
+                      : "Click to load repo context"
+                }
+              >
+                <span className={`inline-block h-1.5 w-1.5 rounded-full ${
+                  repoContextLoading
+                    ? "bg-yellow-500 animate-pulse"
+                    : repoContext
+                      ? "bg-green-500"
+                      : "bg-muted-foreground/50"
+                }`} />
+                ctx
+              </button>
+            )}
             <Button
               variant="ghost"
               size="sm"
