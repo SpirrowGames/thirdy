@@ -14,6 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ErrorBanner } from "@/components/ui/error-banner";
 import { DesignCard } from "./design-card";
 
 interface DesignPanelProps {
@@ -81,9 +82,11 @@ export function DesignPanel({ conversationId, onDesignApproved, preselectedSpecI
       </div>
 
       {error && (
-        <div className="border-b bg-destructive/10 p-3 text-sm text-destructive">
-          {error}
-        </div>
+        <ErrorBanner
+          error={error}
+          onRetry={selectedSpecId ? () => decomposeDesign(selectedSpecId) : undefined}
+          onDismiss={() => {}}
+        />
       )}
 
       <ScrollArea className="flex-1 p-3">

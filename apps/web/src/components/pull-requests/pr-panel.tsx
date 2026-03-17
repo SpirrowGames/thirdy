@@ -14,6 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ErrorBanner } from "@/components/ui/error-banner";
 import { PRCard } from "./pr-card";
 
 interface PRPanelProps {
@@ -111,9 +112,10 @@ export function PRPanel({ conversationId, preselectedCodeId, autoTrigger, onAuto
       </div>
 
       {error && (
-        <div className="border-b bg-destructive/10 p-3 text-sm text-destructive">
-          {error}
-        </div>
+        <ErrorBanner
+          error={error}
+          onRetry={selectedCodeId ? () => createPR(selectedCodeId) : undefined}
+        />
       )}
 
       <ScrollArea className="flex-1 p-3">

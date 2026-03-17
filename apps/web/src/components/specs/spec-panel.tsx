@@ -5,6 +5,7 @@ import remarkGfm from "remark-gfm";
 import { useSpecs } from "@/hooks/use-specs";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { ErrorBanner } from "@/components/ui/error-banner";
 import { SpecPreview } from "./spec-preview";
 
 interface SpecPanelProps {
@@ -38,9 +39,10 @@ export function SpecPanel({ conversationId, onSpecApproved }: SpecPanelProps) {
       </div>
 
       {error && (
-        <div className="border-b bg-destructive/10 p-3 text-sm text-destructive">
-          {error}
-        </div>
+        <ErrorBanner
+          error={error}
+          onRetry={conversationId ? () => extractSpec() : undefined}
+        />
       )}
 
       <ScrollArea className="flex-1 p-3">
