@@ -157,7 +157,7 @@ async def generate_code(
                 accumulated += token
                 yield _sse_event("token", {"content": token})
 
-            # Save to DB
+            # Save to DB and auto-transition task status
             async with get_session() as stream_db:
                 code = GeneratedCode(
                     conversation_id=conv_id,
@@ -166,6 +166,15 @@ async def generate_code(
                     status="draft",
                 )
                 stream_db.add(code)
+
+                # Auto-transition: mark the source task as done
+                task_result = await stream_db.execute(
+                    select(GeneratedTask).where(GeneratedTask.id == task_id)
+                )
+                source_task = task_result.scalar_one_or_none()
+                if source_task and source_task.status != "done":
+                    source_task.status = "done"
+
                 await stream_db.commit()
                 await stream_db.refresh(code)
 
