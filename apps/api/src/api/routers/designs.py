@@ -16,6 +16,7 @@ from starlette.responses import StreamingResponse
 from api.config import settings
 from api.db.models import Conversation, DecisionOption, DecisionPoint, Design, Specification, User
 from api.dependencies import get_current_user, get_db, get_lexora_client
+from api.services.repo_context_helper import get_repo_context_for_conversation
 from shared_schemas import (
     DecisionPointRead,
     DesignDecomposeRequest,
@@ -131,6 +132,11 @@ async def decompose_design(
     )
     existing_design = design_result.scalar_one_or_none()
 
+    # Fetch repo context if available
+    redis = getattr(request.app.state, "redis_pool", None)
+    repo_context = await get_repo_context_for_conversation(conversation.github_repo, lexora, redis)
+    repo_section = f"\n\n{repo_context}" if repo_context else ""
+
     # Build LLM messages for design generation
     llm_messages: list[ChatMessage] = [
         ChatMessage(role="system", content=settings.localized_prompt(settings.design_decomposition_system_prompt)),
@@ -145,6 +151,7 @@ async def decompose_design(
                 content=(
                     f"Here is the specification:\n\n{spec.content}\n\n"
                     f"Here is the existing design document:\n\n{existing_design.content}\n\n"
+                    f"{repo_section}\n\n"
                     "Update the design document based on the current specification."
                 ),
             )
@@ -157,6 +164,7 @@ async def decompose_design(
                 role="user",
                 content=(
                     f"Here is the specification:\n\n{spec.content}\n\n"
+                    f"{repo_section}\n\n"
                     "Generate a detailed design document from this specification."
                 ),
             )

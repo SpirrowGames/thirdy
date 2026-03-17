@@ -14,6 +14,7 @@ from starlette.responses import StreamingResponse
 from api.config import settings
 from api.db.models import Conversation, Design, GeneratedCode, GeneratedTask, Specification, User
 from api.dependencies import get_current_user, get_db, get_lexora_client
+from api.services.repo_context_helper import get_repo_context_for_conversation
 from shared_schemas import (
     CodeGenerateRequest,
     GeneratedCodeRead,
@@ -124,6 +125,10 @@ async def generate_code(
             detail="Specification not found",
         )
 
+    # Fetch repo context if available
+    redis = getattr(request.app.state, "redis_pool", None)
+    repo_context = await get_repo_context_for_conversation(conversation.github_repo, lexora, redis)
+
     conv_id = conversation.id
     task_id = task.id
     task_title = task.title
@@ -140,11 +145,14 @@ async def generate_code(
         })
 
         try:
+            repo_section = f"\n\n{repo_context}" if repo_context else ""
             user_content = (
                 f"## Specification\n\n{spec_content}\n\n"
                 f"## Design Document\n\n{design_content}\n\n"
                 f"## Task\n\n**{task_title}**\n\n{task_description}\n\n"
-                "Generate the implementation code and tests for this task."
+                f"{repo_section}\n\n"
+                "Generate the implementation code and tests for this task. "
+                "Follow the existing repository's conventions, patterns, and file structure."
             )
 
             llm_messages: list[ChatMessage] = [
