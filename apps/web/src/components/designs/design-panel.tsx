@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useElapsedTime } from "@/hooks/use-elapsed-time";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { useDesigns } from "@/hooks/use-designs";
@@ -41,6 +42,7 @@ export function DesignPanel({ conversationId, onDesignApproved, preselectedSpecI
   const approvedSpecs = specs.filter((s) => s.status === "approved");
 
   const [selectedSpecId, setSelectedSpecId] = useState<string>("");
+  const elapsed = useElapsedTime(isDecomposing);
 
   useEffect(() => {
     if (preselectedSpecId) {
@@ -93,7 +95,7 @@ export function DesignPanel({ conversationId, onDesignApproved, preselectedSpecI
         {isDecomposing && decompositionContent && (
           <div className="mb-4 rounded-lg border bg-muted/50 p-3">
             <p className="mb-2 text-xs font-medium text-muted-foreground">
-              Decomposing...
+              Decomposing...{elapsed && ` (${elapsed})`}
             </p>
             <div className="prose prose-sm dark:prose-invert max-w-none">
               <ReactMarkdown remarkPlugins={[remarkGfm]}>

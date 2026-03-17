@@ -3,6 +3,7 @@
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { useSpecs } from "@/hooks/use-specs";
+import { useElapsedTime } from "@/hooks/use-elapsed-time";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ErrorBanner } from "@/components/ui/error-banner";
@@ -24,6 +25,7 @@ export function SpecPanel({ conversationId, onSpecApproved }: SpecPanelProps) {
     updateSpec,
     deleteSpec,
   } = useSpecs(conversationId);
+  const elapsed = useElapsedTime(isExtracting);
 
   return (
     <div className="flex h-full flex-col">
@@ -49,7 +51,7 @@ export function SpecPanel({ conversationId, onSpecApproved }: SpecPanelProps) {
         {isExtracting && extractionContent && (
           <div className="mb-4 rounded-lg border bg-muted/50 p-3">
             <p className="mb-2 text-xs font-medium text-muted-foreground">
-              Extracting...
+              Extracting...{elapsed && ` (${elapsed})`}
             </p>
             <div className="prose prose-sm dark:prose-invert max-w-none">
               <ReactMarkdown remarkPlugins={[remarkGfm]}>
