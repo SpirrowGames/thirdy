@@ -127,9 +127,7 @@ async def transcribe_voice(
                 ChatMessage(role="user", content=full_text),
             ]
 
-            classification_text = ""
-            async for token in lexora.stream(classify_messages):
-                classification_text += token
+            classification_text = await lexora.complete(classify_messages, json_mode=True)
 
             # Parse classification JSON
             classification = None
