@@ -1,6 +1,7 @@
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from pydantic import BaseModel
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -120,5 +121,85 @@ async def list_messages(
         .order_by(Message.created_at.asc())
         .offset(offset)
         .limit(limit)
+    )
+    return result.scalars().all()
+
+
+# --- Branching ---
+
+
+class BranchRequest(BaseModel):
+    message_id: UUID | None = None  # Branch point; None = branch from latest
+
+
+@router.post("/{conversation_id}/branch", status_code=status.HTTP_201_CREATED, response_model=ConversationRead)
+async def branch_conversation(
+    conversation_id: UUID,
+    body: BranchRequest,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    parent = await _get_user_conversation(conversation_id, user, db)
+
+    # Load messages up to branch point
+    msg_query = (
+        select(Message)
+        .where(Message.conversation_id == conversation_id)
+        .order_by(Message.created_at.asc())
+    )
+    if body.message_id:
+        bp_msg = await db.execute(
+            select(Message).where(
+                Message.id == body.message_id,
+                Message.conversation_id == conversation_id,
+            )
+        )
+        branch_msg = bp_msg.scalar_one_or_none()
+        if branch_msg is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Message not found")
+        msg_query = msg_query.where(Message.created_at <= branch_msg.created_at)
+
+    messages_result = await db.execute(msg_query)
+    source_messages = messages_result.scalars().all()
+
+    branch = Conversation(
+        user_id=user.id,
+        title=f"Branch: {parent.title or 'Untitled'}",
+        github_repo=parent.github_repo,
+        team_id=parent.team_id,
+        parent_id=parent.id,
+        branch_point_message_id=body.message_id,
+        branch_status="active",
+    )
+    db.add(branch)
+    await db.flush()
+
+    for msg in source_messages:
+        new_msg = Message(
+            conversation_id=branch.id,
+            role=msg.role,
+            content=msg.content,
+        )
+        db.add(new_msg)
+
+    await db.commit()
+    await db.refresh(branch)
+    return branch
+
+
+@router.get("/{conversation_id}/branches", response_model=list[ConversationRead])
+async def list_branches(
+    conversation_id: UUID,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    await _get_user_conversation(conversation_id, user, db)
+    result = await db.execute(
+        select(Conversation)
+        .where(
+            Conversation.parent_id == conversation_id,
+            Conversation.user_id == user.id,
+        )
+        .order_by(Conversation.created_at.desc())
     )
     return result.scalars().all()

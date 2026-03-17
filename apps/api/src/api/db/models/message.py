@@ -18,4 +18,6 @@ class Message(TimestampMixin, Base):
     role: Mapped[str] = mapped_column(String(20))
     content: Mapped[str] = mapped_column(Text)
 
-    conversation: Mapped["Conversation"] = relationship(back_populates="messages")
+    conversation: Mapped["Conversation"] = relationship(
+        back_populates="messages", foreign_keys=[conversation_id]
+    )

@@ -20,10 +20,18 @@ class Conversation(TimestampMixin, Base):
     team_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("teams.id", ondelete="SET NULL"), nullable=True, index=True
     )
+    parent_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("conversations.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    branch_point_message_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("messages.id", ondelete="SET NULL"), nullable=True
+    )
+    branch_status: Mapped[str | None] = mapped_column(String(20), nullable=True)  # active, merged, abandoned
 
     user: Mapped["User"] = relationship(back_populates="conversations")
     messages: Mapped[list["Message"]] = relationship(
-        back_populates="conversation", cascade="all, delete-orphan"
+        back_populates="conversation", cascade="all, delete-orphan",
+        foreign_keys="Message.conversation_id",
     )
     specifications: Mapped[list["Specification"]] = relationship(
         back_populates="conversation", cascade="all, delete-orphan"
