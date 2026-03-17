@@ -13,6 +13,7 @@ from api.db.models import (
     Conversation,
     User,
 )
+from api.db.models.team import TeamMember
 from api.db.models.specification import Specification
 from api.db.models.design import Design
 from api.db.models.generated_task import GeneratedTask
@@ -65,16 +66,37 @@ class DashboardSummary(BaseModel):
     repos: list[RepoGroup]
 
 
+def _user_conversations_filter(user_id, team_id=None):
+    """Build a base filter for conversations visible to the user."""
+    if team_id:
+        return Conversation.team_id == team_id
+    return Conversation.user_id == user_id
+
+
 @router.get("/summary", response_model=DashboardSummary)
 async def get_summary(
+    team_id: str | None = Query(None),
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    user_convs = select(Conversation.id).where(Conversation.user_id == user.id).subquery()
+    # If team_id provided, verify membership
+    if team_id:
+        member = await db.execute(
+            select(TeamMember).where(
+                TeamMember.team_id == team_id,
+                TeamMember.user_id == user.id,
+            )
+        )
+        if member.scalar_one_or_none() is None:
+            from fastapi import HTTPException, status
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not a team member")
+
+    conv_filter = _user_conversations_filter(user.id, team_id)
+    user_convs = select(Conversation.id).where(conv_filter).subquery()
 
     # Conversation count
     conv_count = await db.scalar(
-        select(func.count()).select_from(Conversation).where(Conversation.user_id == user.id)
+        select(func.count()).select_from(Conversation).where(conv_filter)
     )
 
     # Specs
@@ -135,7 +157,7 @@ async def get_summary(
             Conversation.github_repo,
             func.count(Conversation.id).label("conv_count"),
         )
-        .where(Conversation.user_id == user.id)
+        .where(conv_filter)
         .group_by(Conversation.github_repo)
     )
     repo_groups = []
@@ -144,7 +166,7 @@ async def get_summary(
         c_count = row[1]
         # Get counts per repo group
         repo_conv_ids = select(Conversation.id).where(
-            Conversation.user_id == user.id,
+            conv_filter,
             Conversation.github_repo == gh_repo if gh_repo else Conversation.github_repo.is_(None),
         ).subquery()
         s_count = await db.scalar(
