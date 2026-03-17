@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
 import { useGoogleCalendar } from "@/hooks/use-google-calendar";
 import { ConversationList } from "@/components/sidebar/conversation-list";
+import { CostWidget } from "@/components/sidebar/cost-widget";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -74,6 +75,7 @@ export default function ChatLayout({
           </div>
         </div>
         <ConversationList />
+        <CostWidget />
       </aside>
 
       {/* Mobile sidebar */}
