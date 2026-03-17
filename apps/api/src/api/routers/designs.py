@@ -183,6 +183,9 @@ async def decompose_design(
                 full_content += token
                 yield _sse_event("token", {"content": token})
 
+            # Strip <think> tags from LLM output before saving
+            full_content = LexoraClient._strip_think_tags(full_content)
+
             # Save design to DB
             title = _extract_title(full_content, f"Design - {spec_title}")
 
@@ -227,7 +230,7 @@ async def decompose_design(
                 ),
             ]
 
-            raw_response = await lexora.complete(decision_llm_messages, model=model)
+            raw_response = await lexora.complete(decision_llm_messages, model=model, json_mode=True)
 
             try:
                 parsed = json.loads(raw_response)

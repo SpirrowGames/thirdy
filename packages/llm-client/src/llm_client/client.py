@@ -5,7 +5,7 @@ from collections.abc import AsyncGenerator
 
 import httpx
 
-from .schemas import ChatCompletionRequest, ChatCompletionResponse, ChatMessage
+from .schemas import ChatCompletionRequest, ChatCompletionResponse, ChatMessage, ResponseFormat
 
 
 class LexoraClient:
@@ -20,12 +20,24 @@ class LexoraClient:
     def completions_url(self) -> str:
         return f"{self._base_url}/v1/chat/completions"
 
-    async def complete(self, messages: list[ChatMessage], model: str | None = None) -> str:
-        """Non-streaming completion built on streaming to avoid timeout on slow models."""
-        full = ""
-        async for token in self.stream(messages, model=model):
-            full += token
-        return self._strip_think_tags(full)
+    async def complete(self, messages: list[ChatMessage], model: str | None = None, json_mode: bool = False) -> str:
+        """Non-streaming completion. Use json_mode=True for structured JSON output."""
+        request = ChatCompletionRequest(
+            model=model or self._default_model,
+            messages=messages,
+            stream=False,
+            response_format=ResponseFormat(type="json_object") if json_mode else None,
+        )
+        payload = request.model_dump(exclude_none=True)
+        response = await self._http.post(
+            self.completions_url,
+            json=payload,
+            timeout=600.0,
+        )
+        response.raise_for_status()
+        data = response.json()
+        content = data["choices"][0]["message"]["content"]
+        return self._strip_think_tags(content)
 
     @staticmethod
     def _strip_think_tags(text: str) -> str:
@@ -48,7 +60,7 @@ class LexoraClient:
             "POST",
             self.completions_url,
             json=request.model_dump(),
-            timeout=300.0,
+            timeout=600.0,
         ) as response:
             response.raise_for_status()
             async for line in response.aiter_lines():

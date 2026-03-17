@@ -79,6 +79,10 @@ async def structure_issue(
                 full_response += token
                 yield _sse_event("token", {"content": token})
 
+            # Strip <think> tags from LLM output before parsing
+            from llm_client import LexoraClient
+            full_response = LexoraClient._strip_think_tags(full_response)
+
             # Parse structured result
             structured = None
             try:

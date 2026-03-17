@@ -104,11 +104,13 @@ async def chat(
                 yield _sse_event("token", {"content": token})
 
             # Save assistant message in a new DB session
+            # Strip <think> tags from saved content (streaming includes raw LLM output)
+            saved_content = LexoraClient._strip_think_tags(full_response)
             async with get_session() as stream_db:
                 assistant_message = Message(
                     conversation_id=conversation_id,
                     role="assistant",
-                    content=full_response,
+                    content=saved_content,
                 )
                 stream_db.add(assistant_message)
                 await stream_db.commit()

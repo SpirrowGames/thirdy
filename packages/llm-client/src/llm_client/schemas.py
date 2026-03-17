@@ -8,12 +8,17 @@ class ChatMessage(BaseModel):
     content: str
 
 
+class ResponseFormat(BaseModel):
+    type: str = "text"  # "text" | "json_object"
+
+
 class ChatCompletionRequest(BaseModel):
     model: str
     messages: list[ChatMessage]
     stream: bool = False
     temperature: float = 0.7
     max_tokens: int | None = None
+    response_format: ResponseFormat | None = None
 
 
 class ChatCompletionChoice(BaseModel):

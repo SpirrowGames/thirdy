@@ -167,6 +167,10 @@ async def extract_specification(
                 full_content += token
                 yield _sse_event("token", {"content": token})
 
+            # Strip <think> tags from LLM output before saving
+            from llm_client import LexoraClient
+            full_content = LexoraClient._strip_think_tags(full_content)
+
             # Save to DB in a new session
             title = _extract_title(full_content, f"Specification - {conv_title}")
 

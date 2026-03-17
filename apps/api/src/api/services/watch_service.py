@@ -38,7 +38,7 @@ class WatchService:
 
         # 2-3. Build prompt and call LLM
         messages = self._build_watch_prompt(specs, designs, codes, targets)
-        raw_response = await self.lexora.complete(messages, model=model)
+        raw_response = await self.lexora.complete(messages, model=model, json_mode=True)
 
         # 4. Parse response
         parsed = self._parse_watch_response(raw_response)

@@ -62,7 +62,8 @@ class Settings(BaseSettings):
         '    {"label": "...", "description": "...", "pros": ["..."], "cons": ["..."]}\n'
         "  ]}\n"
         "]}\n\n"
-        "If there are no decision points, return: {\"decision_points\": []}"
+        "If there are no decision points, return: {\"decision_points\": []}\n\n"
+        "IMPORTANT: Output ONLY the JSON object. Do NOT include any thinking, reasoning, or explanation. /no_think"
     )
 
     # Design decomposition
@@ -99,7 +100,8 @@ class Settings(BaseSettings):
         '    {"label": "...", "description": "...", "pros": ["..."], "cons": ["..."]}\n'
         "  ]}\n"
         "]}\n\n"
-        "If there are no decision points, return: {\"decision_points\": []}"
+        "If there are no decision points, return: {\"decision_points\": []}\n\n"
+        "IMPORTANT: Output ONLY the JSON object. Do NOT include any thinking, reasoning, or explanation. /no_think"
     )
 
     # Task generation
@@ -117,7 +119,8 @@ class Settings(BaseSettings):
         '  {"title": "...", "description": "...", "priority": "medium", "dependencies": []},\n'
         '  {"title": "...", "description": "...", "priority": "high", "dependencies": ["first task title"]}\n'
         "]}\n\n"
-        "If there are no tasks to generate, return: {\"tasks\": []}"
+        "If there are no tasks to generate, return: {\"tasks\": []}\n\n"
+        "IMPORTANT: Output ONLY the JSON object. Do NOT include any thinking, reasoning, or explanation. /no_think"
     )
 
     # Code generation
@@ -158,7 +161,8 @@ class Settings(BaseSettings):
         '  "decisions": ["Decisions made during the meeting"],\n'
         '  "action_items": ["Action items assigned"]\n'
         "}\n\n"
-        "If a category has no items, use an empty array."
+        "If a category has no items, use an empty array.\n\n"
+        "IMPORTANT: Output ONLY the JSON object. Do NOT include any thinking, reasoning, or explanation. /no_think"
     )
 
     # Issue structuring (Non-Engineer Client)
@@ -183,7 +187,8 @@ class Settings(BaseSettings):
         "- Expand vague requests into actionable descriptions\n"
         "- Suggest appropriate labels (e.g., enhancement, bug, documentation)\n"
         "- Keep the original intent intact while making it developer-friendly\n"
-        "- If the request is in Japanese, write the issue in Japanese"
+        "- If the request is in Japanese, write the issue in Japanese\n\n"
+        "IMPORTANT: Output ONLY the JSON object. Do NOT include any thinking, reasoning, or explanation. /no_think"
     )
 
     # Internal Audit
@@ -205,7 +210,8 @@ class Settings(BaseSettings):
         '"description": "...", "affected_entity_type": "specification", '
         '"affected_entity_id": "...", "suggestion": "..."}\n'
         "]}\n\n"
-        "If there are no findings, return: {\"findings\": []}"
+        "If there are no findings, return: {\"findings\": []}\n\n"
+        "IMPORTANT: Output ONLY the JSON object. Do NOT include any thinking, reasoning, or explanation. /no_think"
     )
 
     # External Watch
@@ -228,7 +234,8 @@ class Settings(BaseSettings):
         '"description": "...", "source_url": "...", "affected_area": "backend", '
         '"recommendation": "..."}\n'
         "]}\n\n"
-        "If there are no findings, return: {\"findings\": []}"
+        "If there are no findings, return: {\"findings\": []}\n\n"
+        "IMPORTANT: Output ONLY the JSON object. Do NOT include any thinking, reasoning, or explanation. /no_think"
     )
 
     # GitHub
