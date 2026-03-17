@@ -74,14 +74,7 @@ async def structure_issue(
                 ChatMessage(role="user", content=text),
             ]
 
-            full_response = ""
-            async for token in lexora.stream(messages):
-                full_response += token
-                yield _sse_event("token", {"content": token})
-
-            # Strip <think> tags from LLM output before parsing
-            from llm_client import LexoraClient
-            full_response = LexoraClient._strip_think_tags(full_response)
+            full_response = await lexora.complete(messages, json_mode=True)
 
             # Parse structured result
             structured = None
