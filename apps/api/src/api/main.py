@@ -84,6 +84,7 @@ def create_app() -> FastAPI:
     from api.routers.costs import router as costs_router
     from api.routers.notifications import router as notifications_router
     from api.routers.teams import router as teams_router
+    from api.routers.activities import router as activities_router
 
     app.include_router(health_router)
     app.include_router(auth_router)
@@ -104,6 +105,7 @@ def create_app() -> FastAPI:
     app.include_router(costs_router)
     app.include_router(notifications_router)
     app.include_router(teams_router)
+    app.include_router(activities_router)
 
     return app
 
