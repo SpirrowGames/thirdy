@@ -136,6 +136,7 @@ async def generate_tasks(
             try:
                 parsed = json.loads(raw_response)
             except json.JSONDecodeError:
+                logger.error("task_generation_json_parse_failed", raw_response_preview=raw_response[:500])
                 yield _sse_event("error", {"detail": "Failed to parse task generation response as JSON"})
                 return
 
