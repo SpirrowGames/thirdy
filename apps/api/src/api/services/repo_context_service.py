@@ -10,6 +10,8 @@ import json
 import logging
 from dataclasses import dataclass, field
 
+from llm_client import ChatMessage, LexoraClient
+
 from api.config import settings
 from api.services.github import GitHubClient, GitHubError
 
@@ -38,6 +40,18 @@ MAX_EXTRA_FILES = 5
 REDIS_CACHE_TTL = 300  # 5 minutes
 
 
+REPO_SUMMARIZE_SYSTEM_PROMPT = (
+    "You are a codebase analyst. Given a repository's directory structure and key file contents, "
+    "produce a concise summary that would help an AI code generator understand the project.\n\n"
+    "Include:\n"
+    "- Tech stack (languages, frameworks, databases)\n"
+    "- Architecture overview (monorepo structure, backend/frontend split, etc.)\n"
+    "- Key patterns (naming conventions, file organization, testing approach)\n"
+    "- Important configuration (build system, deployment setup)\n\n"
+    "Keep the summary under 1500 characters. Output ONLY the summary in Markdown, no preamble."
+)
+
+
 @dataclass
 class RepoContext:
     owner: str
@@ -46,35 +60,45 @@ class RepoContext:
     description: str | None
     tree_summary: str  # compact directory listing
     file_contents: dict[str, str] = field(default_factory=dict)  # path -> content
+    summary: str = ""  # LLM-generated compact summary
 
     def to_prompt_context(self) -> str:
-        """Format as a context block for LLM prompts."""
+        """Format as a compact context block for LLM prompts.
+
+        Uses the LLM summary if available, otherwise falls back to raw tree + files.
+        """
         parts = [
             f"## Repository Context: {self.owner}/{self.repo}",
             "",
         ]
-        if self.description:
-            parts.append(f"**Description**: {self.description}")
+
+        if self.summary:
+            parts.append(self.summary)
             parts.append("")
-
-        parts.append(f"**Branch**: {self.default_branch}")
-        parts.append("")
-        parts.append("### Directory Structure")
-        parts.append("```")
-        parts.append(self.tree_summary)
-        parts.append("```")
-        parts.append("")
-
-        for path, content in self.file_contents.items():
-            # Truncate large files
-            display = content[:3000]
-            if len(content) > 3000:
-                display += f"\n... (truncated, {len(content)} chars total)"
-            parts.append(f"### {path}")
-            parts.append(f"```")
-            parts.append(display)
+            parts.append("### Directory Structure")
+            parts.append("```")
+            parts.append(self.tree_summary)
+            parts.append("```")
+        else:
+            if self.description:
+                parts.append(f"**Description**: {self.description}")
+                parts.append("")
+            parts.append(f"**Branch**: {self.default_branch}")
+            parts.append("")
+            parts.append("### Directory Structure")
+            parts.append("```")
+            parts.append(self.tree_summary)
             parts.append("```")
             parts.append("")
+            for path, content in self.file_contents.items():
+                display = content[:3000]
+                if len(content) > 3000:
+                    display += f"\n... (truncated, {len(content)} chars total)"
+                parts.append(f"### {path}")
+                parts.append("```")
+                parts.append(display)
+                parts.append("```")
+                parts.append("")
 
         return "\n".join(parts)
 
@@ -129,11 +153,45 @@ def _select_extra_files(tree_items: list[dict]) -> list[str]:
     return [c[0] for c in candidates[:MAX_EXTRA_FILES]]
 
 
+async def summarize_repo_context(
+    lexora: LexoraClient,
+    ctx: RepoContext,
+) -> str:
+    """Generate a compact LLM summary of the repository."""
+    # Build input from raw context
+    raw_parts = [f"Repository: {ctx.owner}/{ctx.repo}"]
+    if ctx.description:
+        raw_parts.append(f"Description: {ctx.description}")
+    raw_parts.append(f"\nDirectory structure:\n{ctx.tree_summary}")
+    for path, content in ctx.file_contents.items():
+        raw_parts.append(f"\n--- {path} ---\n{content[:2000]}")
+
+    raw_input = "\n".join(raw_parts)
+    # Truncate to ~8000 chars to stay within model limits
+    if len(raw_input) > 8000:
+        raw_input = raw_input[:8000] + "\n... (truncated)"
+
+    messages = [
+        ChatMessage(role="system", content=REPO_SUMMARIZE_SYSTEM_PROMPT),
+        ChatMessage(role="user", content=raw_input),
+    ]
+
+    try:
+        summary = await lexora.complete(messages)
+        from llm_client import LexoraClient as LC
+        summary = LC._strip_think_tags(summary)
+        return summary.strip()
+    except Exception as exc:
+        logger.warning("Failed to summarize repo context: %s", exc)
+        return ""
+
+
 async def fetch_repo_context(
     gh: GitHubClient,
     owner: str,
     repo: str,
     redis=None,
+    lexora: LexoraClient | None = None,
 ) -> RepoContext:
     """Fetch repository context. Uses Redis cache if available."""
     cache_key = f"repo_context:{owner}/{repo}"
@@ -192,6 +250,10 @@ async def fetch_repo_context(
         file_contents=file_contents,
     )
 
+    # Generate LLM summary if lexora client is available
+    if lexora is not None:
+        ctx.summary = await summarize_repo_context(lexora, ctx)
+
     # Cache
     if redis is not None:
         try:
@@ -202,6 +264,7 @@ async def fetch_repo_context(
                 "description": ctx.description,
                 "tree_summary": ctx.tree_summary,
                 "file_contents": ctx.file_contents,
+                "summary": ctx.summary,
             }
             await redis.set(cache_key, json.dumps(cache_data), ex=REDIS_CACHE_TTL)
         except Exception as exc:

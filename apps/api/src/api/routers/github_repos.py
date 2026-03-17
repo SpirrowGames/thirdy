@@ -9,8 +9,10 @@ from pydantic import BaseModel
 from api.config import settings
 from api.db.models import User
 from api.dependencies import get_current_user
+from api.dependencies import get_lexora_client
 from api.services.github import GitHubClient, GitHubError
 from api.services.repo_context_service import fetch_repo_context
+from llm_client import LexoraClient
 
 logger = logging.getLogger(__name__)
 
@@ -133,8 +135,9 @@ async def get_repo_context(
     repo: str,
     request: Request,
     user: User = Depends(get_current_user),
+    lexora: LexoraClient = Depends(get_lexora_client),
 ):
-    """Fetch repository context (structure + key files). Cached in Redis for 5 min."""
+    """Fetch repository context (structure + key files + LLM summary). Cached in Redis for 5 min."""
     if not settings.github_token:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -144,7 +147,7 @@ async def get_repo_context(
     try:
         async with httpx.AsyncClient(timeout=30.0) as http:
             gh = GitHubClient(token=settings.github_token, owner=owner, repo=repo, http=http)
-            ctx = await fetch_repo_context(gh, owner, repo, redis=redis)
+            ctx = await fetch_repo_context(gh, owner, repo, redis=redis, lexora=lexora)
         return RepoContextResponse(
             owner=ctx.owner,
             repo=ctx.repo,
