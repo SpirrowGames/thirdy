@@ -13,5 +13,6 @@ from .github_issue import GitHubIssue
 from .background_job import BackgroundJob
 from .audit_report import AuditReport
 from .watch_report import WatchReport
+from .notification import Notification
 
-__all__ = ["User", "Conversation", "Message", "Specification", "DecisionPoint", "DecisionOption", "Design", "GeneratedTask", "GeneratedCode", "PullRequest", "VoteSession", "Vote", "VoiceTranscript", "GitHubIssue", "BackgroundJob", "AuditReport", "WatchReport"]
+__all__ = ["User", "Conversation", "Message", "Specification", "DecisionPoint", "DecisionOption", "Design", "GeneratedTask", "GeneratedCode", "PullRequest", "VoteSession", "Vote", "VoiceTranscript", "GitHubIssue", "BackgroundJob", "AuditReport", "WatchReport", "Notification"]

@@ -6,6 +6,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useGoogleCalendar } from "@/hooks/use-google-calendar";
 import { ConversationList } from "@/components/sidebar/conversation-list";
 import { CostWidget } from "@/components/sidebar/cost-widget";
+import { NotificationBell } from "@/components/sidebar/notification-bell";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -53,6 +54,7 @@ export default function ChatLayout({
                 {user.name}
               </span>
             )}
+            <NotificationBell />
             <button
               onClick={calendarConnected ? undefined : connectCalendar}
               className="relative text-sm"

@@ -58,6 +58,26 @@ class WatchService:
             status="completed",
         )
         self.session.add(report)
+
+        # Generate notifications for high/critical findings
+        high_findings = [f for f in findings if f.get("impact_level") in ("high", "critical")]
+        if high_findings:
+            from api.db.models import Notification, Conversation
+            # Get conversation owner
+            conv_result = await self.session.execute(
+                select(Conversation.user_id).where(Conversation.id == conversation_id)
+            )
+            owner_id = conv_result.scalar_one_or_none()
+            if owner_id:
+                notification = Notification(
+                    user_id=owner_id,
+                    type="watch_alert",
+                    title=f"Watch Alert: {len(high_findings)} high-impact finding(s)",
+                    body="; ".join(f["title"] for f in high_findings[:3]),
+                    link=f"/chat/{conversation_id}",
+                )
+                self.session.add(notification)
+
         await self.session.commit()
         await self.session.refresh(report)
         return report

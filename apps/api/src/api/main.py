@@ -82,6 +82,7 @@ def create_app() -> FastAPI:
     from api.routers.audits import router as audits_router
     from api.routers.watches import router as watches_router
     from api.routers.costs import router as costs_router
+    from api.routers.notifications import router as notifications_router
 
     app.include_router(health_router)
     app.include_router(auth_router)
@@ -100,6 +101,7 @@ def create_app() -> FastAPI:
     app.include_router(audits_router)
     app.include_router(watches_router)
     app.include_router(costs_router)
+    app.include_router(notifications_router)
 
     return app
 
