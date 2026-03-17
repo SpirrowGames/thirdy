@@ -14,7 +14,7 @@ export function useWatches(conversationId: string | null) {
     conversationId
       ? `/conversations/${conversationId}/watches`
       : null,
-    { refreshInterval: 5000 },
+    { refreshInterval: 30000 },
   );
 
   const [isTriggering, setIsTriggering] = useState(false);

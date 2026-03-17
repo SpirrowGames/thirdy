@@ -14,7 +14,7 @@ export function useAudits(conversationId: string | null) {
     conversationId
       ? `/conversations/${conversationId}/audits`
       : null,
-    { refreshInterval: 5000 },
+    { refreshInterval: 30000 },
   );
 
   const [isTriggering, setIsTriggering] = useState(false);
