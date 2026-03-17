@@ -20,9 +20,11 @@ interface DesignPanelProps {
   conversationId: string | null;
   onDesignApproved?: (designId: string) => void;
   preselectedSpecId?: string;
+  autoTrigger?: boolean;
+  onAutoTriggered?: () => void;
 }
 
-export function DesignPanel({ conversationId, onDesignApproved, preselectedSpecId }: DesignPanelProps) {
+export function DesignPanel({ conversationId, onDesignApproved, preselectedSpecId, autoTrigger, onAutoTriggered }: DesignPanelProps) {
   const {
     designs,
     isLoading,
@@ -44,6 +46,14 @@ export function DesignPanel({ conversationId, onDesignApproved, preselectedSpecI
       setSelectedSpecId(preselectedSpecId);
     }
   }, [preselectedSpecId]);
+
+  // Auto-trigger decomposition when autoTrigger is set
+  useEffect(() => {
+    if (autoTrigger && preselectedSpecId && !isDecomposing && conversationId) {
+      decomposeDesign(preselectedSpecId);
+      onAutoTriggered?.();
+    }
+  }, [autoTrigger, preselectedSpecId, isDecomposing, conversationId, decomposeDesign, onAutoTriggered]);
 
   return (
     <div className="flex h-full flex-col">

@@ -38,6 +38,7 @@ export default function ConversationPage() {
   const [preselectedDesignId, setPreselectedDesignId] = useState<string>();
   const [preselectedTaskId, setPreselectedTaskId] = useState<string>();
   const [preselectedCodeId, setPreselectedCodeId] = useState<string>();
+  const [autoTrigger, setAutoTrigger] = useState(false);
 
   const {
     messages,
@@ -75,6 +76,7 @@ export default function ConversationPage() {
   const handleSpecApproved = (specId: string) => {
     setActiveTab("designs");
     setPreselectedSpecId(specId);
+    setAutoTrigger(true);
   };
 
   const handleDesignApproved = (designId: string) => {
@@ -82,6 +84,7 @@ export default function ConversationPage() {
       setActiveTab("decisions");
     } else {
       setActiveTab("tasks");
+      setAutoTrigger(true);
     }
     setPreselectedDesignId(designId);
   };
@@ -96,11 +99,13 @@ export default function ConversationPage() {
   const handleTaskDone = (taskId: string) => {
     setActiveTab("codes");
     setPreselectedTaskId(taskId);
+    setAutoTrigger(true);
   };
 
   const handleCodeApproved = (codeId: string) => {
     setActiveTab("prs");
     setPreselectedCodeId(codeId);
+    setAutoTrigger(true);
   };
 
   return (
@@ -187,6 +192,8 @@ export default function ConversationPage() {
                 conversationId={conversationId}
                 onDesignApproved={handleDesignApproved}
                 preselectedSpecId={preselectedSpecId}
+                autoTrigger={autoTrigger && activeTab === "designs"}
+                onAutoTriggered={() => setAutoTrigger(false)}
               />
             </TabsContent>
             <TabsContent value="decisions" className="flex-1 overflow-y-auto">
@@ -197,6 +204,8 @@ export default function ConversationPage() {
                 conversationId={conversationId}
                 preselectedDesignId={preselectedDesignId}
                 onTaskDone={handleTaskDone}
+                autoTrigger={autoTrigger && activeTab === "tasks"}
+                onAutoTriggered={() => setAutoTrigger(false)}
               />
             </TabsContent>
             <TabsContent value="codes" className="flex-1 overflow-y-auto">
@@ -204,12 +213,16 @@ export default function ConversationPage() {
                 conversationId={conversationId}
                 preselectedTaskId={preselectedTaskId}
                 onCodeApproved={handleCodeApproved}
+                autoTrigger={autoTrigger && activeTab === "codes"}
+                onAutoTriggered={() => setAutoTrigger(false)}
               />
             </TabsContent>
             <TabsContent value="prs" className="flex-1 overflow-y-auto">
               <PRPanel
                 conversationId={conversationId}
                 preselectedCodeId={preselectedCodeId}
+                autoTrigger={autoTrigger && activeTab === "prs"}
+                onAutoTriggered={() => setAutoTrigger(false)}
               />
             </TabsContent>
             <TabsContent value="voice" className="flex-1 overflow-y-auto">

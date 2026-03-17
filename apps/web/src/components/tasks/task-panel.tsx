@@ -18,9 +18,11 @@ interface TaskPanelProps {
   conversationId: string | null;
   preselectedDesignId?: string;
   onTaskDone?: (taskId: string) => void;
+  autoTrigger?: boolean;
+  onAutoTriggered?: () => void;
 }
 
-export function TaskPanel({ conversationId, preselectedDesignId, onTaskDone }: TaskPanelProps) {
+export function TaskPanel({ conversationId, preselectedDesignId, onTaskDone, autoTrigger, onAutoTriggered }: TaskPanelProps) {
   const {
     tasks,
     isLoading,
@@ -41,6 +43,14 @@ export function TaskPanel({ conversationId, preselectedDesignId, onTaskDone }: T
       setSelectedDesignId(preselectedDesignId);
     }
   }, [preselectedDesignId]);
+
+  // Auto-trigger task generation when autoTrigger is set
+  useEffect(() => {
+    if (autoTrigger && preselectedDesignId && !isGenerating && conversationId) {
+      generateTasks(preselectedDesignId);
+      onAutoTriggered?.();
+    }
+  }, [autoTrigger, preselectedDesignId, isGenerating, conversationId, generateTasks, onAutoTriggered]);
 
   return (
     <div className="flex h-full flex-col">

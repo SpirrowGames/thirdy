@@ -19,6 +19,8 @@ import { PRCard } from "./pr-card";
 interface PRPanelProps {
   conversationId: string | null;
   preselectedCodeId?: string;
+  autoTrigger?: boolean;
+  onAutoTriggered?: () => void;
 }
 
 const PR_STEPS = [
@@ -28,7 +30,7 @@ const PR_STEPS = [
   { event: "pr_created", label: "PR created" },
 ] as const;
 
-export function PRPanel({ conversationId, preselectedCodeId }: PRPanelProps) {
+export function PRPanel({ conversationId, preselectedCodeId, autoTrigger, onAutoTriggered }: PRPanelProps) {
   const {
     pullRequests,
     isLoading,
@@ -56,6 +58,14 @@ export function PRPanel({ conversationId, preselectedCodeId }: PRPanelProps) {
       setSelectedCodeId(preselectedCodeId);
     }
   }, [preselectedCodeId]);
+
+  // Auto-trigger PR creation when autoTrigger is set
+  useEffect(() => {
+    if (autoTrigger && preselectedCodeId && !isCreating && conversationId) {
+      createPR(preselectedCodeId);
+      onAutoTriggered?.();
+    }
+  }, [autoTrigger, preselectedCodeId, isCreating, conversationId, createPR, onAutoTriggered]);
 
   // Determine which step is current based on progress
   const currentStepEvent = progress?.step

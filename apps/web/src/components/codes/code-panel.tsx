@@ -21,9 +21,11 @@ interface CodePanelProps {
   conversationId: string | null;
   preselectedTaskId?: string;
   onCodeApproved?: (codeId: string) => void;
+  autoTrigger?: boolean;
+  onAutoTriggered?: () => void;
 }
 
-export function CodePanel({ conversationId, preselectedTaskId, onCodeApproved }: CodePanelProps) {
+export function CodePanel({ conversationId, preselectedTaskId, onCodeApproved, autoTrigger, onAutoTriggered }: CodePanelProps) {
   const {
     codes,
     isLoading,
@@ -50,6 +52,14 @@ export function CodePanel({ conversationId, preselectedTaskId, onCodeApproved }:
       setSelectedTaskId(preselectedTaskId);
     }
   }, [preselectedTaskId]);
+
+  // Auto-trigger code generation when autoTrigger is set
+  useEffect(() => {
+    if (autoTrigger && preselectedTaskId && !isGenerating && conversationId) {
+      generateCode(preselectedTaskId);
+      onAutoTriggered?.();
+    }
+  }, [autoTrigger, preselectedTaskId, isGenerating, conversationId, generateCode, onAutoTriggered]);
 
   const taskTitleMap = new Map(tasks.map((t) => [t.id, t.title]));
 
