@@ -64,6 +64,10 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
+    # Metrics middleware (must be added before routers)
+    from api.routers.metrics import MetricsMiddleware as _MetricsMiddleware
+    app.add_middleware(_MetricsMiddleware)
+
     # Routers
     from api.auth.router import router as auth_router
     from api.routers.chat import router as chat_router
@@ -85,6 +89,7 @@ def create_app() -> FastAPI:
     from api.routers.notifications import router as notifications_router
     from api.routers.teams import router as teams_router
     from api.routers.activities import router as activities_router
+    from api.routers.metrics import router as metrics_router
 
     app.include_router(health_router)
     app.include_router(auth_router)
@@ -106,6 +111,7 @@ def create_app() -> FastAPI:
     app.include_router(notifications_router)
     app.include_router(teams_router)
     app.include_router(activities_router)
+    app.include_router(metrics_router)
 
     return app
 
