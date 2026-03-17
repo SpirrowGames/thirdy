@@ -33,6 +33,10 @@ export interface ConversationRead {
   user_id: string;
   title: string | null;
   github_repo: string | null;
+  team_id: string | null;
+  parent_id: string | null;
+  branch_point_message_id: string | null;
+  branch_status: string | null;
   created_at: string;
   updated_at: string;
 }

@@ -212,11 +212,29 @@ export default function ConversationPage() {
       {/* Chat area */}
       <div className="flex flex-1 flex-col min-h-0">
         <div className="flex items-center justify-between border-b px-4 py-3 md:pl-4 pl-12">
-          <h1 className="text-sm font-medium truncate">
-            {messages[0]?.content
-              ? messages[0].content.slice(0, 60)
-              : "Chat"}
-          </h1>
+          <div className="flex items-center gap-2 min-w-0">
+            <h1 className="text-sm font-medium truncate">
+              {messages[0]?.content
+                ? messages[0].content.slice(0, 60)
+                : "Chat"}
+            </h1>
+            {conversation?.parent_id && (
+              <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
+                branch{conversation.branch_status === "merged" ? " (merged)" : ""}
+              </span>
+            )}
+            {conversation?.parent_id && conversation?.branch_status === "active" && (
+              <button
+                onClick={async () => {
+                  await api.post(`/conversations/${conversationId}/merge`, {});
+                  await mutateConversation();
+                }}
+                className="shrink-0 rounded bg-green-500/10 px-1.5 py-0.5 text-[10px] font-medium text-green-600 hover:bg-green-500/20 transition-colors"
+              >
+                Merge
+              </button>
+            )}
+          </div>
           <div className="flex items-center gap-2">
             <div className="relative">
               <RepoSelector

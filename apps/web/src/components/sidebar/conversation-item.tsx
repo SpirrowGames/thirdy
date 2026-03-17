@@ -27,9 +27,15 @@ export function ConversationItem({
     >
       <Link
         href={`/chat/${conversation.id}`}
-        className="flex-1 truncate"
+        className={cn("flex-1 truncate", conversation.parent_id && "pl-3")}
       >
+        {conversation.parent_id && (
+          <span className="mr-1 text-muted-foreground">&#8627;</span>
+        )}
         {conversation.title || "Untitled"}
+        {conversation.branch_status === "merged" && (
+          <span className="ml-1 text-[10px] text-green-500">merged</span>
+        )}
       </Link>
       <Button
         variant="ghost"
