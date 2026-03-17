@@ -42,7 +42,7 @@ async def create_conversation(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    conversation = Conversation(user_id=user.id, title=body.title)
+    conversation = Conversation(user_id=user.id, title=body.title, github_repo=body.github_repo)
     db.add(conversation)
     await db.commit()
     await db.refresh(conversation)
@@ -85,6 +85,8 @@ async def update_conversation(
     conversation = await _get_user_conversation(conversation_id, user, db)
     if body.title is not None:
         conversation.title = body.title
+    if body.github_repo is not None:
+        conversation.github_repo = body.github_repo if body.github_repo else None
     await db.commit()
     await db.refresh(conversation)
     return conversation

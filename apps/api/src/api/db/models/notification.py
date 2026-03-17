@@ -20,4 +20,4 @@ class Notification(Base):
     link = Column(String(500), nullable=True)  # e.g., /chat/{conversation_id}
     is_read = Column(Boolean, default=False, nullable=False)
     is_dismissed = Column(Boolean, default=False, nullable=False)
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)

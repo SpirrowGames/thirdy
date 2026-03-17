@@ -167,6 +167,24 @@ async def create_github_issue(
             detail="GitHub token not configured",
         )
 
+    # Resolve GitHub repo: conversation-level > env fallback
+    conv_result = await db.execute(
+        select(Conversation).where(Conversation.id == conversation_id)
+    )
+    conv = conv_result.scalar_one()
+    if conv.github_repo:
+        parts = conv.github_repo.split("/", 1)
+        gh_owner, gh_repo = (parts[0], parts[1]) if len(parts) == 2 else (settings.github_org or settings.github_owner, parts[0])
+    else:
+        gh_owner = settings.github_owner
+        gh_repo = settings.github_repo
+
+    if not gh_owner or not gh_repo:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="GitHub repository not configured. Set a repository on this conversation.",
+        )
+
     issue_id = issue.id
     title = issue.title
     issue_body = issue.body
@@ -187,8 +205,8 @@ async def create_github_issue(
             async with httpx.AsyncClient(timeout=30.0) as http:
                 gh = GitHubClient(
                     token=settings.github_token,
-                    owner=settings.github_owner,
-                    repo=settings.github_repo,
+                    owner=gh_owner,
+                    repo=gh_repo,
                     http=http,
                 )
                 gh_issue = await gh.create_issue(

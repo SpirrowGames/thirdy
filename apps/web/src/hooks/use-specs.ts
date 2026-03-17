@@ -15,6 +15,7 @@ export function useSpecs(conversationId: string | null) {
     conversationId
       ? `/conversations/${conversationId}/specifications`
       : null,
+    { refreshInterval: 10000 },
   );
 
   const [isExtracting, setIsExtracting] = useState(false);

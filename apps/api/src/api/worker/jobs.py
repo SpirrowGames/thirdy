@@ -1,6 +1,7 @@
 """Job functions for ARQ workers."""
 import logging
 from datetime import datetime, timezone
+from uuid import UUID
 
 from sqlalchemy import select
 
@@ -105,3 +106,148 @@ async def watch_conversation_job(ctx: dict, job_id: str, payload: dict) -> dict:
     except Exception as exc:
         await _update_job_status(ctx, job_id, "failed", error=str(exc))
         raise
+
+
+async def classify_and_extract_spec_job(
+    ctx: dict,
+    conversation_id: str,
+    user_message: str,
+    ai_response: str,
+) -> dict:
+    """Classify message for spec relevance and extract if relevant.
+
+    Lightweight job (no BackgroundJob record) that runs after each chat response.
+    Chains spec_classifier → incremental_extractor.
+    """
+    from api.services.spec_classifier import classify_message
+    from api.services.incremental_spec_extractor import incremental_extract
+
+    lexora = ctx["lexora_client"]
+
+    # Step 1: Classify
+    classification = await classify_message(lexora, user_message, ai_response)
+    logger.info(
+        "Spec classification for %s: relevant=%s categories=%s",
+        conversation_id, classification.is_spec_relevant, classification.categories,
+    )
+
+    if not classification.is_spec_relevant:
+        return {"classified": True, "relevant": False}
+
+    # Step 2: Incremental extraction
+    conv_uuid = UUID(conversation_id)
+    async with ctx["session_factory"]() as session:
+        spec = await incremental_extract(
+            session=session,
+            lexora=lexora,
+            conversation_id=conv_uuid,
+            user_message=user_message,
+            ai_response=ai_response,
+            classification_summary=classification.summary,
+            categories=classification.categories,
+        )
+
+    if spec is None:
+        return {"classified": True, "relevant": True, "extracted": False}
+
+    # Step 3: Create notification
+    try:
+        async with ctx["session_factory"]() as session:
+            from api.db.models.notification import Notification
+            from api.db.models import Conversation
+            conv_result = await session.execute(
+                select(Conversation).where(Conversation.id == conv_uuid)
+            )
+            conv = conv_result.scalar_one_or_none()
+            if conv:
+                notification = Notification(
+                    user_id=conv.user_id,
+                    type="spec_updated",
+                    title="仕様が自動更新されました",
+                    body=f"会話の内容から仕様を更新しました: {classification.summary[:100]}",
+                    link=f"/chat/{conversation_id}",
+                )
+                session.add(notification)
+                await session.commit()
+    except Exception as notify_err:
+        logger.warning("Failed to create spec notification: %s", notify_err)
+
+    return {
+        "classified": True,
+        "relevant": True,
+        "extracted": True,
+        "spec_id": str(spec.id),
+    }
+
+
+async def classify_and_extract_decision_job(
+    ctx: dict,
+    conversation_id: str,
+    user_message: str,
+    ai_response: str,
+) -> dict:
+    """Classify message for decision points and extract if found.
+
+    Lightweight job (no BackgroundJob record) that runs after each chat response,
+    in parallel with spec classification.
+    """
+    from api.services.decision_classifier import classify_decision
+    from api.services.incremental_decision_extractor import incremental_extract_decision
+
+    lexora = ctx["lexora_client"]
+
+    # Step 1: Classify
+    classification = await classify_decision(lexora, user_message, ai_response)
+    logger.info(
+        "Decision classification for %s: has_decision=%s question=%s",
+        conversation_id, classification.has_decision_point, classification.question[:80] if classification.question else "",
+    )
+
+    if not classification.has_decision_point:
+        return {"classified": True, "has_decision": False}
+
+    # Step 2: Extract decision point
+    conv_uuid = UUID(conversation_id)
+    async with ctx["session_factory"]() as session:
+        dp = await incremental_extract_decision(
+            session=session,
+            lexora=lexora,
+            conversation_id=conv_uuid,
+            user_message=user_message,
+            ai_response=ai_response,
+            question_hint=classification.question,
+            options_hint=classification.options_hint,
+            context_hint=classification.context,
+        )
+
+    if dp is None:
+        return {"classified": True, "has_decision": True, "extracted": False}
+
+    # Step 3: Create notification
+    try:
+        async with ctx["session_factory"]() as session:
+            from api.db.models.notification import Notification
+            from api.db.models import Conversation
+            conv_result = await session.execute(
+                select(Conversation).where(Conversation.id == conv_uuid)
+            )
+            conv = conv_result.scalar_one_or_none()
+            if conv:
+                notification = Notification(
+                    user_id=conv.user_id,
+                    type="decision_detected",
+                    title="新しい判断ポイントが検出されました",
+                    body=classification.question[:200],
+                    link=f"/chat/{conversation_id}",
+                )
+                session.add(notification)
+                await session.commit()
+    except Exception as notify_err:
+        logger.warning("Failed to create decision notification: %s", notify_err)
+
+    return {
+        "classified": True,
+        "has_decision": True,
+        "extracted": True,
+        "decision_point_id": str(dp.id),
+    }

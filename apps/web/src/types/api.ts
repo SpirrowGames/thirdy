@@ -20,18 +20,37 @@ export interface UserRead {
 // --- Conversation ---
 export interface ConversationCreate {
   title?: string | null;
+  github_repo?: string | null;
 }
 
 export interface ConversationUpdate {
   title?: string | null;
+  github_repo?: string | null;
 }
 
 export interface ConversationRead {
   id: string;
   user_id: string;
   title: string | null;
+  github_repo: string | null;
   created_at: string;
   updated_at: string;
+}
+
+// --- GitHub Repos ---
+export interface RepoInfo {
+  full_name: string;
+  name: string;
+  description: string | null;
+  private: boolean;
+  default_branch: string;
+  html_url: string;
+}
+
+export interface CreateRepoRequest {
+  name: string;
+  description?: string;
+  private?: boolean;
 }
 
 // --- Message ---

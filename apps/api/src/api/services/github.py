@@ -30,7 +30,31 @@ class GitHubClient:
             "X-GitHub-Api-Version": "2022-11-28",
         }
 
-    async def _request(self, method: str, url: str, **kwargs) -> dict:
+    async def list_org_repos(self, org: str) -> list[dict]:
+        """List repositories for an organization (paginated, up to 200)."""
+        repos: list[dict] = []
+        for page in range(1, 3):  # max 2 pages = 200 repos
+            data = await self._request(
+                "GET",
+                f"https://api.github.com/orgs/{org}/repos",
+                params={"per_page": 100, "page": page, "sort": "updated", "direction": "desc"},
+            )
+            if not data:
+                break
+            repos.extend(data)
+            if len(data) < 100:
+                break
+        return repos
+
+    async def create_repo(self, org: str, name: str, description: str = "", private: bool = True) -> dict:
+        """Create a new repository in an organization."""
+        return await self._request(
+            "POST",
+            f"https://api.github.com/orgs/{org}/repos",
+            json={"name": name, "description": description, "private": private, "auto_init": True},
+        )
+
+    async def _request(self, method: str, url: str, **kwargs):
         resp = await self._http.request(method, url, headers=self._headers, **kwargs)
         if resp.status_code >= 400:
             detail = resp.text

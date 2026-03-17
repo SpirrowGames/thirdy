@@ -16,6 +16,7 @@ class Conversation(TimestampMixin, Base):
         ForeignKey("users.id", ondelete="CASCADE"), index=True
     )
     title: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    github_repo: Mapped[str | None] = mapped_column(String(500), nullable=True)
 
     user: Mapped["User"] = relationship(back_populates="conversations")
     messages: Mapped[list["Message"]] = relationship(

@@ -241,8 +241,9 @@ class Settings(BaseSettings):
 
     # GitHub
     github_token: str = ""
-    github_owner: str = ""
-    github_repo: str = ""
+    github_owner: str = ""  # Legacy: used as fallback
+    github_repo: str = ""   # Legacy: used as fallback
+    github_org: str = ""    # Organization to list repos from
     github_base_branch: str = "main"
 
     model_config = {"env_file": ".env", "extra": "ignore"}

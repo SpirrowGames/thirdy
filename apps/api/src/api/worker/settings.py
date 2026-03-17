@@ -4,7 +4,7 @@ from llm_client import LexoraClient
 
 from api.config import settings
 from api.db.engine import async_session
-from api.worker.jobs import audit_conversation_job, watch_conversation_job
+from api.worker.jobs import audit_conversation_job, watch_conversation_job, classify_and_extract_spec_job, classify_and_extract_decision_job
 from api.worker.redis_pool import get_redis_settings
 
 
@@ -29,7 +29,7 @@ async def shutdown(ctx: dict) -> None:
 
 
 class WorkerSettings:
-    functions = [audit_conversation_job, watch_conversation_job]
+    functions = [audit_conversation_job, watch_conversation_job, classify_and_extract_spec_job, classify_and_extract_decision_job]
     redis_settings = get_redis_settings()
     on_startup = startup
     on_shutdown = shutdown

@@ -119,11 +119,18 @@ async def create_pull_request(
 ):
     conversation = await _get_user_conversation(conversation_id, user, db)
 
-    # Validate GitHub config
-    if not settings.github_token or not settings.github_owner or not settings.github_repo:
+    # Resolve GitHub repo: conversation-level > env fallback
+    if conversation.github_repo:
+        parts = conversation.github_repo.split("/", 1)
+        gh_owner, gh_repo = (parts[0], parts[1]) if len(parts) == 2 else (settings.github_org or settings.github_owner, parts[0])
+    else:
+        gh_owner = settings.github_owner
+        gh_repo = settings.github_repo
+
+    if not settings.github_token or not gh_owner or not gh_repo:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="GitHub configuration is missing. Set GITHUB_TOKEN, GITHUB_OWNER, and GITHUB_REPO.",
+            detail="GitHub configuration is missing. Set a repository on this conversation or configure GITHUB_OWNER and GITHUB_REPO.",
         )
 
     # Load approved code
@@ -210,8 +217,8 @@ async def create_pull_request(
             async with httpx.AsyncClient(timeout=30.0) as http:
                 gh = GitHubClient(
                     token=settings.github_token,
-                    owner=settings.github_owner,
-                    repo=settings.github_repo,
+                    owner=gh_owner,
+                    repo=gh_repo,
                     http=http,
                 )
 

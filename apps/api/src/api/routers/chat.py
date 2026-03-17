@@ -87,8 +87,10 @@ async def chat(
 
     conversation_id = conversation.id
     user_message_id = user_message.id
+    user_content = body.content
     model = body.model
     get_session = request.app.state.session_factory
+    redis_pool = getattr(request.app.state, "redis_pool", None)
 
     async def event_generator() -> AsyncGenerator[str]:
         # Send message_saved event
@@ -121,6 +123,28 @@ async def chat(
                 "conversation_id": str(conversation_id),
                 "message_id": assistant_message_id,
             })
+
+            # Enqueue background classification jobs (spec + decision, in parallel)
+            if redis_pool is not None:
+                try:
+                    await redis_pool.enqueue_job(
+                        "classify_and_extract_spec_job",
+                        str(conversation_id),
+                        user_content,
+                        saved_content,
+                    )
+                except Exception as enqueue_err:
+                    logger.warning("Failed to enqueue spec classification: %s", enqueue_err)
+                try:
+                    await redis_pool.enqueue_job(
+                        "classify_and_extract_decision_job",
+                        str(conversation_id),
+                        user_content,
+                        saved_content,
+                    )
+                except Exception as enqueue_err:
+                    logger.warning("Failed to enqueue decision classification: %s", enqueue_err)
+
         except Exception as e:
             logger.exception("Error during LLM streaming")
             yield _sse_event("error", {"detail": str(e)})

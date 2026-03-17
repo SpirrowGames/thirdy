@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
+import useSWR from "swr";
 import { useChat } from "@/hooks/use-chat";
 import { useSpecs } from "@/hooks/use-specs";
 import { useDesigns } from "@/hooks/use-designs";
@@ -28,6 +29,9 @@ import { WatchPanel } from "@/components/watches/watch-panel";
 import { PipelineProgress } from "@/components/pipeline/pipeline-progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
+import { RepoSelector } from "@/components/github/repo-selector";
+import { api } from "@/lib/api-client";
+import type { ConversationRead } from "@/types/api";
 
 export default function ConversationPage() {
   const params = useParams();
@@ -39,6 +43,56 @@ export default function ConversationPage() {
   const [preselectedTaskId, setPreselectedTaskId] = useState<string>();
   const [preselectedCodeId, setPreselectedCodeId] = useState<string>();
   const [autoTrigger, setAutoTrigger] = useState(false);
+
+  // Conversation data (for github_repo)
+  const { data: conversation, mutate: mutateConversation } = useSWR<ConversationRead>(
+    `/conversations/${conversationId}`,
+  );
+
+  const handleRepoChange = async (repo: string) => {
+    await api.patch<ConversationRead>(`/conversations/${conversationId}`, {
+      github_repo: repo || null,
+    });
+    await mutateConversation();
+  };
+
+  // Resizable panel
+  const PANEL_MIN = 280;
+  const PANEL_MAX = 800;
+  const PANEL_DEFAULT = 360;
+  const [panelWidth, setPanelWidth] = useState(() => {
+    if (typeof window === "undefined") return PANEL_DEFAULT;
+    const saved = localStorage.getItem("thirdy-panel-width");
+    return saved ? Math.max(PANEL_MIN, Math.min(PANEL_MAX, Number(saved))) : PANEL_DEFAULT;
+  });
+  const isDragging = useRef(false);
+
+  const handleDragStart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    isDragging.current = true;
+    const startX = e.clientX;
+    const startWidth = panelWidth;
+    const onMove = (ev: MouseEvent) => {
+      const delta = startX - ev.clientX;
+      const newWidth = Math.max(PANEL_MIN, Math.min(PANEL_MAX, startWidth + delta));
+      setPanelWidth(newWidth);
+    };
+    const onUp = () => {
+      isDragging.current = false;
+      document.removeEventListener("mousemove", onMove);
+      document.removeEventListener("mouseup", onUp);
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+    };
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
+    document.addEventListener("mousemove", onMove);
+    document.addEventListener("mouseup", onUp);
+  }, [panelWidth]);
+
+  useEffect(() => {
+    localStorage.setItem("thirdy-panel-width", String(panelWidth));
+  }, [panelWidth]);
 
   const {
     messages,
@@ -59,6 +113,46 @@ export default function ConversationPage() {
   const { issues } = useGitHubIssues(conversationId);
   const { reports: auditReports } = useAudits(conversationId);
   const { reports: watchReports } = useWatches(conversationId);
+
+  // Track spec auto-updates: detect when specs change while not on the specs tab
+  const specFingerprint = specs.map((s) => `${s.id}:${s.updated_at}`).join(",");
+  const prevSpecFingerprint = useRef(specFingerprint);
+  const [specUpdated, setSpecUpdated] = useState(false);
+
+  useEffect(() => {
+    if (specFingerprint !== prevSpecFingerprint.current) {
+      if (prevSpecFingerprint.current !== "" && activeTab !== "specs") {
+        setSpecUpdated(true);
+      }
+      prevSpecFingerprint.current = specFingerprint;
+    }
+  }, [specFingerprint, activeTab]);
+
+  useEffect(() => {
+    if (activeTab === "specs") {
+      setSpecUpdated(false);
+    }
+  }, [activeTab]);
+
+  // Track decision auto-updates
+  const decisionFingerprint = decisions.map((d) => d.id).join(",");
+  const prevDecisionFingerprint = useRef(decisionFingerprint);
+  const [decisionUpdated, setDecisionUpdated] = useState(false);
+
+  useEffect(() => {
+    if (decisionFingerprint !== prevDecisionFingerprint.current) {
+      if (prevDecisionFingerprint.current !== "" && activeTab !== "decisions") {
+        setDecisionUpdated(true);
+      }
+      prevDecisionFingerprint.current = decisionFingerprint;
+    }
+  }, [decisionFingerprint, activeTab]);
+
+  useEffect(() => {
+    if (activeTab === "decisions") {
+      setDecisionUpdated(false);
+    }
+  }, [activeTab]);
 
   const hasApprovedSpec = specs.some((s) => s.status === "approved");
   const hasApprovedDesign = designs.some((d) => d.status === "approved");
@@ -118,14 +212,22 @@ export default function ConversationPage() {
               ? messages[0].content.slice(0, 60)
               : "Chat"}
           </h1>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-7 text-xs"
-            onClick={() => setPanelOpen(!panelOpen)}
-          >
-            {panelOpen ? "Close Panel" : "Pipeline"}
-          </Button>
+          <div className="flex items-center gap-2">
+            <div className="relative">
+              <RepoSelector
+                value={conversation?.github_repo ?? null}
+                onChange={handleRepoChange}
+              />
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 text-xs"
+              onClick={() => setPanelOpen(!panelOpen)}
+            >
+              {panelOpen ? "Close Panel" : "Pipeline"}
+            </Button>
+          </div>
         </div>
 
         {isLoadingMessages ? (
@@ -151,7 +253,12 @@ export default function ConversationPage() {
 
       {/* Right panel */}
       {panelOpen && (
-        <aside className="hidden w-[360px] shrink-0 border-l md:flex md:flex-col min-h-0">
+        <aside className="hidden shrink-0 md:flex md:flex-col min-h-0 relative" style={{ width: panelWidth }}>
+          {/* Drag handle */}
+          <div
+            onMouseDown={handleDragStart}
+            className="absolute left-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-primary/20 active:bg-primary/30 z-10 border-l"
+          />
           <PipelineProgress
             specsApproved={hasApprovedSpec}
             designsApproved={hasApprovedDesign}
@@ -167,11 +274,19 @@ export default function ConversationPage() {
             onTabChange={setActiveTab}
           />
           <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-1 min-h-0 flex-col">
-            <TabsList className="mx-3 mt-1">
-              <TabsTrigger value="specs">Specs</TabsTrigger>
+            <TabsList className="mx-3 mt-1 flex flex-wrap w-full h-auto gap-0.5">
+              <TabsTrigger value="specs">
+                Specs
+                {specUpdated && (
+                  <span className="ml-1 inline-block h-2 w-2 rounded-full bg-blue-500 animate-pulse" />
+                )}
+              </TabsTrigger>
               <TabsTrigger value="designs">Designs</TabsTrigger>
               <TabsTrigger value="decisions">
                 Decisions{pendingDecisions.length > 0 ? ` (${pendingDecisions.length})` : ""}
+                {decisionUpdated && (
+                  <span className="ml-1 inline-block h-2 w-2 rounded-full bg-blue-500 animate-pulse" />
+                )}
               </TabsTrigger>
               <TabsTrigger value="tasks">Tasks</TabsTrigger>
               <TabsTrigger value="codes">Code</TabsTrigger>

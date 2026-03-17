@@ -90,6 +90,7 @@ def create_app() -> FastAPI:
     from api.routers.teams import router as teams_router
     from api.routers.activities import router as activities_router
     from api.routers.metrics import router as metrics_router
+    from api.routers.github_repos import router as github_repos_router
 
     app.include_router(health_router)
     app.include_router(auth_router)
@@ -112,6 +113,7 @@ def create_app() -> FastAPI:
     app.include_router(teams_router)
     app.include_router(activities_router)
     app.include_router(metrics_router)
+    app.include_router(github_repos_router)
 
     return app
 

@@ -18,6 +18,7 @@ export function useDecisions(conversationId: string | null) {
     conversationId
       ? `/conversations/${conversationId}/decisions`
       : null,
+    { refreshInterval: 10000 },
   );
 
   const [isDetecting, setIsDetecting] = useState(false);
