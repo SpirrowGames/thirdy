@@ -74,7 +74,8 @@ async def structure_issue(
                 ChatMessage(role="user", content=text),
             ]
 
-            full_response = await lexora.complete(messages, json_mode=True)
+            json_model = settings.lexora_json_model or None
+            full_response = await lexora.complete(messages, model=json_model, json_mode=True)
 
             # Parse structured result
             structured = None

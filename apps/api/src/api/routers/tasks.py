@@ -131,7 +131,8 @@ async def generate_tasks(
                 ),
             ]
 
-            raw_response = await lexora.complete(llm_messages, model=model, json_mode=True)
+            json_model = settings.lexora_json_model or model
+            raw_response = await lexora.complete(llm_messages, model=json_model, json_mode=True)
 
             try:
                 parsed = json.loads(raw_response)

@@ -121,7 +121,8 @@ async def detect_decisions(
 
         try:
             # Non-streaming LLM call for structured JSON output
-            raw_response = await lexora.complete(llm_messages, model=model, json_mode=True)
+            json_model = settings.lexora_json_model or model
+            raw_response = await lexora.complete(llm_messages, model=json_model, json_mode=True)
 
             # Parse JSON response
             try:
