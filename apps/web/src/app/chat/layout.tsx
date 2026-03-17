@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
 import { useGoogleCalendar } from "@/hooks/use-google-calendar";
@@ -47,7 +48,12 @@ export default function ChatLayout({
       {/* Desktop sidebar */}
       <aside className="hidden w-[280px] shrink-0 border-r bg-muted/30 md:flex md:flex-col">
         <div className="flex items-center justify-between border-b px-4 py-3">
-          <span className="text-sm font-semibold">Thirdy</span>
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-semibold">Thirdy</span>
+            <Link href="/dashboard" className="rounded px-1.5 py-0.5 text-[10px] text-muted-foreground hover:bg-accent hover:text-foreground transition-colors">
+              Dashboard
+            </Link>
+          </div>
           <div className="flex items-center gap-2">
             {user && (
               <span className="text-xs text-muted-foreground truncate max-w-[120px]">
