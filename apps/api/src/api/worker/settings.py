@@ -34,6 +34,6 @@ class WorkerSettings:
     on_startup = startup
     on_shutdown = shutdown
     max_jobs = 10
-    job_timeout = 300
+    job_timeout = 1800  # 30 min for auto pipeline
     # cron_jobs – Phase 6 で有効化
     # cron_jobs = [cron(audit_conversation_job, hour=0, minute=0)]

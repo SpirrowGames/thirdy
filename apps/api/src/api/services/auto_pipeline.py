@@ -162,9 +162,7 @@ async def run_auto_pipeline(
         ]
 
         try:
-            code_content = ""
-            async for token in lexora.stream(code_messages):
-                code_content += token
+            code_content = await lexora.complete(code_messages)
             code_content = LexoraClient._strip_think_tags(code_content)
 
             if not code_content.strip():
