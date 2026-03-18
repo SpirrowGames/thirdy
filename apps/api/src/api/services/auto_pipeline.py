@@ -162,7 +162,9 @@ async def run_auto_pipeline(
         ]
 
         try:
-            raw_code = await lexora.complete(code_messages)
+            # Use fallback model (Claude API) for reliable code generation
+            code_model = settings.lexora_fallback_model or None
+            raw_code = await lexora.complete(code_messages, model=code_model)
             # Only strip think tags, NOT code fences (code_parser needs them)
             import re
             code_content = re.sub(r"<think>[\s\S]*?</think>\s*", "", raw_code).strip()
