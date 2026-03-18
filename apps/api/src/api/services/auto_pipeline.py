@@ -163,9 +163,18 @@ async def run_auto_pipeline(
 
         try:
             # Use fallback model (Claude API) for reliable code generation
+            # Call raw HTTP to avoid _strip_think_tags removing code fences
             code_model = settings.lexora_fallback_model or None
-            raw_code = await lexora.complete(code_messages, model=code_model)
-            # Only strip think tags, NOT code fences (code_parser needs them)
+            from llm_client import ChatCompletionRequest
+            req = ChatCompletionRequest(
+                model=code_model or lexora._default_model,
+                messages=code_messages,
+                stream=False,
+            )
+            resp = await lexora._http.post(lexora.completions_url, json=req.model_dump(exclude_none=True), timeout=600.0)
+            resp.raise_for_status()
+            raw_code = resp.json()["choices"][0]["message"]["content"]
+            # Only strip think tags, preserve code fences
             import re
             code_content = re.sub(r"<think>[\s\S]*?</think>\s*", "", raw_code).strip()
 
