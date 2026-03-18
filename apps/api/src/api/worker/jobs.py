@@ -193,10 +193,45 @@ async def classify_and_extract_decision_job(
     """
     from api.services.decision_classifier import classify_decision
     from api.services.incremental_decision_extractor import incremental_extract_decision
+    from api.services.decision_resolver import check_and_resolve_decisions
 
     lexora = ctx["lexora_client"]
+    conv_uuid = UUID(conversation_id)
 
-    # Step 1: Classify
+    # Step 0: Check if any pending decisions are resolved
+    resolved_ids: list[str] = []
+    try:
+        async with ctx["session_factory"]() as session:
+            resolved_ids = await check_and_resolve_decisions(
+                session, lexora, conv_uuid, user_message, ai_response,
+            )
+        if resolved_ids:
+            logger.info("Auto-resolved %d decision(s) for %s", len(resolved_ids), conversation_id)
+            # Notify
+            try:
+                async with ctx["session_factory"]() as session:
+                    from api.db.models.notification import Notification
+                    from api.db.models import Conversation
+                    conv_result = await session.execute(
+                        select(Conversation).where(Conversation.id == conv_uuid)
+                    )
+                    conv = conv_result.scalar_one_or_none()
+                    if conv:
+                        notification = Notification(
+                            user_id=conv.user_id,
+                            type="decision_resolved",
+                            title="判断ポイントが自動確定されました",
+                            body=f"{len(resolved_ids)}件の判断ポイントが会話から自動確定されました",
+                            link=f"/chat/{conversation_id}",
+                        )
+                        session.add(notification)
+                        await session.commit()
+            except Exception as notify_err:
+                logger.warning("Failed to create resolution notification: %s", notify_err)
+    except Exception as resolve_err:
+        logger.warning("Decision resolution check failed: %s", resolve_err)
+
+    # Step 1: Classify for new decision points
     classification = await classify_decision(lexora, user_message, ai_response)
     logger.info(
         "Decision classification for %s: has_decision=%s question=%s",
@@ -204,10 +239,9 @@ async def classify_and_extract_decision_job(
     )
 
     if not classification.has_decision_point:
-        return {"classified": True, "has_decision": False}
+        return {"classified": True, "has_decision": False, "resolved": resolved_ids}
 
     # Step 2: Extract decision point
-    conv_uuid = UUID(conversation_id)
     async with ctx["session_factory"]() as session:
         dp = await incremental_extract_decision(
             session=session,
@@ -250,4 +284,5 @@ async def classify_and_extract_decision_job(
         "has_decision": True,
         "extracted": True,
         "decision_point_id": str(dp.id),
+        "resolved": resolved_ids,
     }
