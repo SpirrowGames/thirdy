@@ -39,7 +39,7 @@ export function CodePanel({ conversationId, preselectedTaskId, onCodeApproved, a
   } = useCodes(conversationId);
 
   const { tasks } = useTasks(conversationId);
-  const doneTasks = tasks.filter((t) => t.status === "done");
+  const availableTasks = tasks.filter((t) => t.status !== "skipped");
 
   const [selectedTaskId, setSelectedTaskId] = useState<string>("");
 
@@ -69,10 +69,10 @@ export function CodePanel({ conversationId, preselectedTaskId, onCodeApproved, a
       <div className="space-y-2 border-b p-3">
         <Select value={selectedTaskId} onValueChange={setSelectedTaskId}>
           <SelectTrigger className="w-full">
-            <SelectValue placeholder="Select a done task..." />
+            <SelectValue placeholder="Select a task..." />
           </SelectTrigger>
           <SelectContent>
-            {doneTasks.map((task) => (
+            {availableTasks.map((task) => (
               <SelectItem key={task.id} value={task.id}>
                 {task.title}
               </SelectItem>
