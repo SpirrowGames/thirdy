@@ -6,6 +6,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { useDesigns } from "@/hooks/use-designs";
 import { useSpecs } from "@/hooks/use-specs";
+import { api } from "@/lib/api-client";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
@@ -42,7 +43,28 @@ export function DesignPanel({ conversationId, onDesignApproved, preselectedSpecI
   const approvedSpecs = specs.filter((s) => s.status === "approved");
 
   const [selectedSpecId, setSelectedSpecId] = useState<string>("");
+  const [autoMode, setAutoMode] = useState(() => {
+    if (typeof window === "undefined") return true;
+    return localStorage.getItem("thirdy-auto-mode") !== "false";
+  });
+  const [pipelineRunning, setPipelineRunning] = useState(false);
   const elapsed = useElapsedTime(isDecomposing);
+
+  const toggleAutoMode = () => {
+    const next = !autoMode;
+    setAutoMode(next);
+    localStorage.setItem("thirdy-auto-mode", String(next));
+  };
+
+  const triggerAutoPipeline = async (designId: string) => {
+    setPipelineRunning(true);
+    try {
+      await api.post(`/designs/${designId}/auto-pipeline`, {});
+    } catch {
+      // errors will show via notifications
+    }
+    // Don't clear pipelineRunning — it stays until notifications arrive
+  };
 
   useEffect(() => {
     if (preselectedSpecId) {
@@ -81,6 +103,26 @@ export function DesignPanel({ conversationId, onDesignApproved, preselectedSpecI
         >
           {isDecomposing ? "Decomposing..." : "Decompose"}
         </Button>
+        <div className="flex items-center justify-between">
+          <button
+            onClick={toggleAutoMode}
+            className="flex items-center gap-1.5 text-[11px] text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <span className={`inline-block h-2 w-2 rounded-full ${autoMode ? "bg-green-500" : "bg-muted-foreground/40"}`} />
+            {autoMode ? "Auto" : "Manual"}
+          </button>
+          {autoMode && (
+            <span className="text-[10px] text-muted-foreground">
+              Approve後にTask→Code→PRまで自動実行
+            </span>
+          )}
+          {pipelineRunning && (
+            <span className="flex items-center gap-1 text-[10px] text-blue-500">
+              <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-blue-500" />
+              Pipeline実行中...
+            </span>
+          )}
+        </div>
       </div>
 
       {error && (
@@ -123,10 +165,13 @@ export function DesignPanel({ conversationId, onDesignApproved, preselectedSpecI
               <DesignCard
                 key={design.id}
                 design={design}
-                onStatusChange={(id, status) => {
-                  updateDesign(id, { status });
-                  if (status === "approved" && onDesignApproved) {
-                    onDesignApproved(id);
+                onStatusChange={(id, newStatus) => {
+                  updateDesign(id, { status: newStatus });
+                  if (newStatus === "approved") {
+                    if (autoMode) {
+                      triggerAutoPipeline(id);
+                    }
+                    onDesignApproved?.(id);
                   }
                 }}
                 onDelete={deleteDesign}

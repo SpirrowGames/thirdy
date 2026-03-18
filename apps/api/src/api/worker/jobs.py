@@ -286,3 +286,69 @@ async def classify_and_extract_decision_job(
         "decision_point_id": str(dp.id),
         "resolved": resolved_ids,
     }
+
+
+async def auto_pipeline_job(
+    ctx: dict,
+    conversation_id: str,
+    design_id: str,
+) -> dict:
+    """Run the full auto pipeline: Tasks → Code → PR for each task."""
+    from api.services.auto_pipeline import run_auto_pipeline
+
+    lexora = ctx["lexora_client"]
+    session_factory = ctx["session_factory"]
+
+    # Notify start
+    conv_uuid = UUID(conversation_id)
+    try:
+        async with session_factory() as session:
+            from api.db.models.notification import Notification
+            from api.db.models import Conversation
+            conv = (await session.execute(
+                select(Conversation).where(Conversation.id == conv_uuid)
+            )).scalar_one_or_none()
+            if conv:
+                notification = Notification(
+                    user_id=conv.user_id,
+                    type="auto_pipeline_started",
+                    title="Auto Pipeline 開始",
+                    body="Design承認後の自動パイプラインを開始しました",
+                    link=f"/chat/{conversation_id}",
+                )
+                session.add(notification)
+                await session.commit()
+    except Exception:
+        pass
+
+    result = await run_auto_pipeline(
+        session_factory=session_factory,
+        lexora=lexora,
+        conversation_id=conv_uuid,
+        design_id=UUID(design_id),
+    )
+
+    # Notify completion
+    try:
+        async with session_factory() as session:
+            from api.db.models.notification import Notification
+            from api.db.models import Conversation
+            conv = (await session.execute(
+                select(Conversation).where(Conversation.id == conv_uuid)
+            )).scalar_one_or_none()
+            if conv:
+                errors = result.get("errors", [])
+                status_text = "完了" if not errors else f"完了（{len(errors)}件のエラー）"
+                notification = Notification(
+                    user_id=conv.user_id,
+                    type="auto_pipeline_complete",
+                    title=f"Auto Pipeline {status_text}",
+                    body=f"{result.get('tasks', 0)}タスク, {result.get('codes', 0)}コード, {result.get('prs', 0)} PR",
+                    link=f"/chat/{conversation_id}",
+                )
+                session.add(notification)
+                await session.commit()
+    except Exception:
+        pass
+
+    return result

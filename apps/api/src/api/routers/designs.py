@@ -377,3 +377,42 @@ async def delete_design(
     design = await _get_user_design(design_id, user, db)
     await db.delete(design)
     await db.commit()
+
+
+# --- Auto Pipeline ---
+
+
+@router.post("/designs/{design_id}/auto-pipeline")
+async def trigger_auto_pipeline(
+    design_id: UUID,
+    request: Request,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Trigger the auto pipeline: Tasks → Code → PR for each task."""
+    design = await _get_user_design(design_id, user, db)
+    if design.status != "approved":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Design must be approved to run auto pipeline",
+        )
+    if not design.content:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Design has no content",
+        )
+
+    redis_pool = getattr(request.app.state, "redis_pool", None)
+    if redis_pool is None:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Background job system not available",
+        )
+
+    await redis_pool.enqueue_job(
+        "auto_pipeline_job",
+        str(design.conversation_id),
+        str(design_id),
+    )
+
+    return {"status": "started", "design_id": str(design_id)}
