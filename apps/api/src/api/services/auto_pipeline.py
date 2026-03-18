@@ -162,8 +162,10 @@ async def run_auto_pipeline(
         ]
 
         try:
-            code_content = await lexora.complete(code_messages)
-            code_content = LexoraClient._strip_think_tags(code_content)
+            raw_code = await lexora.complete(code_messages)
+            # Only strip think tags, NOT code fences (code_parser needs them)
+            import re
+            code_content = re.sub(r"<think>[\s\S]*?</think>\s*", "", raw_code).strip()
 
             if not code_content.strip():
                 results["errors"].append(f"Empty code for task: {task_title}")
