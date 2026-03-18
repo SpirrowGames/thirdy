@@ -131,8 +131,13 @@ async def generate_tasks(
                 ),
             ]
 
-            json_model = settings.lexora_json_model or model
-            raw_response = await lexora.complete(llm_messages, model=json_model, json_mode=True)
+            # Estimate prompt size; if too large for JSON model (vLLM 8k limit), use default
+            prompt_chars = sum(len(m.content) for m in llm_messages)
+            use_json_model = settings.lexora_json_model and prompt_chars <= 4000
+            if not use_json_model and settings.lexora_json_model:
+                logger.info("Prompt too large for JSON model (%d chars), falling back to default", prompt_chars)
+            json_model = settings.lexora_json_model if use_json_model else model
+            raw_response = await lexora.complete(llm_messages, model=json_model, json_mode=use_json_model)
 
             try:
                 parsed = json.loads(raw_response)
