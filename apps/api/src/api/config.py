@@ -242,6 +242,9 @@ class Settings(BaseSettings):
     # LLM fallback for large prompts (when JSON model limit exceeded)
     lexora_fallback_model: str = ""  # e.g., claude-sonnet-4-20250514
 
+    # Auto pipeline
+    auto_pipeline_concurrency: int = 4  # max concurrent Code+PR operations
+
     # GitHub
     github_token: str = ""
     github_owner: str = ""  # Legacy: used as fallback

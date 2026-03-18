@@ -1,11 +1,12 @@
 """Auto pipeline: Design approved → Tasks → Code → PR for each task.
 
 Runs as an ARQ background job. Generates tasks with dependency info,
-then processes them in topological order (blockers first).
+then processes them in dependency order with configurable concurrency.
 """
 
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 import re
@@ -14,7 +15,6 @@ from uuid import UUID
 import httpx
 from llm_client import ChatMessage, ChatCompletionRequest, LexoraClient
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.config import settings
 from api.db.models import Conversation
@@ -27,8 +27,6 @@ from api.services.code_parser import parse_code_blocks
 from api.services.github import GitHubClient, GitHubError
 
 logger = logging.getLogger(__name__)
-
-MAX_TASKS = 20
 
 
 async def run_auto_pipeline(
@@ -55,130 +53,112 @@ async def run_auto_pipeline(
     spec_content = spec.content if spec else ""
     design_content = design.content
     design_title = design.title
-
-    # Resolve GitHub repo
     gh_owner, gh_repo = _resolve_github(conv)
 
-    # === Step 1: Generate Tasks with dependencies ===
+    # === Step 1: Generate Tasks ===
     await progress("tasks", "Generating tasks...")
-
     tasks_data = await _generate_tasks(lexora, design_content)
     if isinstance(tasks_data, dict) and "error" in tasks_data:
         return tasks_data
 
-    # Save tasks, resolve dependency title→UUID
-    title_to_id: dict[str, UUID] = {}
-    task_records: list[dict] = []
-
-    async with session_factory() as s:
-        for i, td in enumerate(tasks_data):
-            task = GeneratedTask(
-                conversation_id=conversation_id,
-                design_id=design_id,
-                title=td["title"],
-                description=td.get("description", ""),
-                priority=td.get("priority", "medium"),
-                status="pending",
-                sort_order=i,
-                dependencies=json.dumps([]),  # fill in second pass
-            )
-            s.add(task)
-            await s.flush()
-            title_to_id[td["title"].lower()] = task.id
-            task_records.append({
-                "id": task.id,
-                "title": td["title"],
-                "dep_titles": td.get("dependencies", []),
-            })
-        await s.commit()
-
-    # Second pass: resolve dependency titles to UUIDs
-    async with session_factory() as s:
-        for rec in task_records:
-            dep_ids = []
-            for dep_title in rec["dep_titles"]:
-                dep_id = title_to_id.get(dep_title.lower())
-                if dep_id:
-                    dep_ids.append(str(dep_id))
-            if dep_ids:
-                task = await s.get(GeneratedTask, rec["id"])
-                if task:
-                    task.dependencies = json.dumps(dep_ids)
-            rec["dep_ids"] = dep_ids
-        await s.commit()
-
+    # Save tasks with dependencies
+    task_records = await _save_tasks(session_factory, conversation_id, design_id, tasks_data)
     await progress("tasks_done", f"{len(task_records)} tasks generated")
 
-    # === Step 2 & 3: Process tasks in dependency order ===
+    # === Step 2 & 3: Process in dependency order with concurrency ===
+    concurrency = settings.auto_pipeline_concurrency
     results = {"tasks": len(task_records), "codes": 0, "prs": 0, "errors": []}
     completed: set[str] = set()
+    in_flight: set[str] = set()
+    semaphore = asyncio.Semaphore(concurrency)
 
-    while True:
-        # Find next task: pending, all dependencies completed
-        next_task = None
+    async def process_task(rec: dict):
+        """Process a single task: Code gen → PR creation."""
+        tid = str(rec["id"])
+        task_title = rec["title"]
+        in_flight.add(tid)
+
+        async with semaphore:
+            await progress("code", f"[{len(completed)+1}/{len(task_records)}] Code: {task_title}")
+
+            async with session_factory() as s:
+                task = await s.get(GeneratedTask, rec["id"])
+                task_desc = task.description if task else ""
+
+            code_id = await _generate_and_save_code(
+                session_factory, lexora, conversation_id, rec["id"],
+                task_title, task_desc, spec_content, design_content, results,
+            )
+
+            if code_id:
+                results["codes"] += 1
+                if settings.github_token and gh_owner and gh_repo:
+                    await progress("pr", f"PR: {task_title}")
+                    await _create_pr(
+                        session_factory, conversation_id, code_id, task_title,
+                        spec_title, design_title, gh_owner, gh_repo, results,
+                    )
+
+            completed.add(tid)
+            in_flight.discard(tid)
+
+    # Dependency-aware scheduling loop
+    pending_tasks = asyncio.Queue()
+    running: list[asyncio.Task] = []
+
+    while len(completed) < len(task_records):
+        # Find ready tasks (deps satisfied, not in-flight, not completed)
+        newly_ready = []
         for rec in task_records:
             tid = str(rec["id"])
-            if tid in completed:
+            if tid in completed or tid in in_flight:
                 continue
             blockers = [d for d in rec["dep_ids"] if d not in completed]
             if not blockers:
-                next_task = rec
-                break
+                newly_ready.append(rec)
 
-        if next_task is None:
-            # Check if there are uncompleted tasks (circular dep or all done)
+        # If nothing is ready and nothing is in-flight, force one (circular dep)
+        if not newly_ready and not in_flight:
             remaining = [r for r in task_records if str(r["id"]) not in completed]
             if remaining:
-                # Force process remaining (circular deps)
-                next_task = remaining[0]
-                await progress("warn", f"Forcing task with unresolved deps: {next_task['title']}")
+                await progress("warn", f"Forcing task with unresolved deps: {remaining[0]['title']}")
+                newly_ready.append(remaining[0])
             else:
                 break
 
-        task_id = next_task["id"]
-        task_title = next_task["title"]
+        # Launch ready tasks
+        for rec in newly_ready:
+            task = asyncio.create_task(process_task(rec))
+            running.append(task)
 
-        async with session_factory() as s:
-            task = await s.get(GeneratedTask, task_id)
-            task_desc = task.description if task else ""
+        # Wait for at least one to finish before scheduling more
+        if running:
+            done, _pending = await asyncio.wait(running, return_when=asyncio.FIRST_COMPLETED)
+            running = [t for t in running if not t.done()]
 
-        # --- Generate Code ---
-        await progress("code", f"[{len(completed)+1}/{len(task_records)}] Generating code: {task_title}")
-
-        code_id = await _generate_and_save_code(
-            session_factory, lexora, conversation_id, task_id, task_title, task_desc,
-            spec_content, design_content, results,
-        )
-
-        if code_id is None:
-            completed.add(str(task_id))
-            continue
-
-        results["codes"] += 1
-
-        # --- Create PR ---
-        if settings.github_token and gh_owner and gh_repo:
-            await progress("pr", f"[{len(completed)+1}/{len(task_records)}] Creating PR: {task_title}")
-            await _create_pr(
-                session_factory, conversation_id, code_id, task_title,
-                spec_title, design_title, gh_owner, gh_repo, results,
-            )
-
-        completed.add(str(task_id))
+    # Wait for all remaining
+    if running:
+        await asyncio.gather(*running, return_exceptions=True)
 
     await progress("complete",
         f"Done: {results['tasks']} tasks, {results['codes']} codes, {results['prs']} PRs"
-        + (f", {len(results['errors'])} errors" if results["errors"] else ""))
+        + (f", {len(results['errors'])} errors" if results['errors'] else ""))
     return results
 
 
+# ---------------------------------------------------------------------------
+# Internal helpers
+# ---------------------------------------------------------------------------
+
 async def _generate_tasks(lexora: LexoraClient, design_content: str) -> list[dict] | dict:
-    """Generate tasks from design, deduplicated and capped."""
     from api.services.llm_model_selector import select_json_model, truncate_for_json_model
 
     messages = [
         ChatMessage(role="system", content=settings.localized_prompt(settings.task_generation_system_prompt)),
-        ChatMessage(role="user", content=f"Here is the design document:\n\n{design_content}\n\nGenerate implementation tasks with dependencies. Keep tasks to a maximum of {MAX_TASKS}."),
+        ChatMessage(role="user", content=(
+            f"Here is the design document:\n\n{design_content}\n\n"
+            "Generate implementation tasks with dependencies."
+        )),
     ]
 
     chosen_model, use_json_mode = await select_json_model(lexora, messages)
@@ -189,7 +169,7 @@ async def _generate_tasks(lexora: LexoraClient, design_content: str) -> list[dic
             if len(truncated) < len(design_content):
                 messages[1] = ChatMessage(
                     role="user",
-                    content=f"Here is the design document:\n\n{truncated}\n\nGenerate implementation tasks with dependencies. Keep tasks to a maximum of {MAX_TASKS}.",
+                    content=f"Here is the design document:\n\n{truncated}\n\nGenerate implementation tasks with dependencies.",
                 )
 
     raw = await lexora.complete(messages, model=chosen_model, json_mode=use_json_mode)
@@ -205,7 +185,7 @@ async def _generate_tasks(lexora: LexoraClient, design_content: str) -> list[dic
     if not tasks:
         return {"error": "No tasks generated"}
 
-    # Deduplicate and cap
+    # Deduplicate by title
     seen: set[str] = set()
     unique = []
     for t in tasks:
@@ -213,14 +193,59 @@ async def _generate_tasks(lexora: LexoraClient, design_content: str) -> list[dic
         if title.lower() not in seen:
             seen.add(title.lower())
             unique.append(t)
-    return unique[:MAX_TASKS]
+    return unique
+
+
+async def _save_tasks(session_factory, conversation_id, design_id, tasks_data) -> list[dict]:
+    """Save tasks to DB with dependency resolution. Returns list of task records."""
+    title_to_id: dict[str, UUID] = {}
+    records: list[dict] = []
+
+    async with session_factory() as s:
+        for i, td in enumerate(tasks_data):
+            task = GeneratedTask(
+                conversation_id=conversation_id,
+                design_id=design_id,
+                title=td["title"],
+                description=td.get("description", ""),
+                priority=td.get("priority", "medium"),
+                status="pending",
+                sort_order=i,
+                dependencies=json.dumps([]),
+            )
+            s.add(task)
+            await s.flush()
+            title_to_id[td["title"].lower()] = task.id
+            records.append({
+                "id": task.id,
+                "title": td["title"],
+                "dep_titles": td.get("dependencies", []),
+                "dep_ids": [],
+            })
+        await s.commit()
+
+    # Resolve title→UUID
+    async with session_factory() as s:
+        for rec in records:
+            dep_ids = []
+            for dt in rec["dep_titles"]:
+                did = title_to_id.get(dt.lower())
+                if did:
+                    dep_ids.append(str(did))
+            rec["dep_ids"] = dep_ids
+            if dep_ids:
+                task = await s.get(GeneratedTask, rec["id"])
+                if task:
+                    task.dependencies = json.dumps(dep_ids)
+        await s.commit()
+
+    return records
 
 
 async def _generate_and_save_code(
     session_factory, lexora, conversation_id, task_id, task_title, task_desc,
     spec_content, design_content, results,
 ) -> UUID | None:
-    """Generate code for a task, save to DB. Returns code_id or None on failure."""
     messages = [
         ChatMessage(role="system", content=settings.localized_prompt(settings.code_generation_system_prompt)),
         ChatMessage(role="user", content=(
@@ -232,7 +257,6 @@ async def _generate_and_save_code(
     ]
 
     try:
-        # Raw HTTP call to preserve code fences (avoid _strip_think_tags)
         code_model = settings.lexora_fallback_model or None
         req = ChatCompletionRequest(
             model=code_model or lexora._default_model,
@@ -240,7 +264,7 @@ async def _generate_and_save_code(
             stream=False,
         )
         resp = await lexora._http.post(
-            lexora.completions_url, json=req.model_dump(exclude_none=True), timeout=600.0
+            lexora.completions_url, json=req.model_dump(exclude_none=True), timeout=600.0,
         )
         resp.raise_for_status()
         raw_code = resp.json()["choices"][0]["message"]["content"]
@@ -274,7 +298,6 @@ async def _create_pr(
     session_factory, conversation_id, code_id, task_title,
     spec_title, design_title, gh_owner, gh_repo, results,
 ):
-    """Create a PR for generated code."""
     async with session_factory() as s:
         code = await s.get(GeneratedCode, code_id)
         if not code:
