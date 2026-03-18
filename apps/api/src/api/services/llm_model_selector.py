@@ -45,7 +45,7 @@ async def select_json_model(
     if est_tokens < max_tokens * safety_margin:
         return json_model, True
 
-    # Fallback: prefer configured fallback model > caller's fallback > json model anyway
+    # Fallback: prefer configured fallback model > caller's fallback
     effective_fallback = settings.lexora_fallback_model or fallback_model
     if effective_fallback:
         logger.info(
@@ -54,9 +54,37 @@ async def select_json_model(
         )
         return effective_fallback, False
 
-    # No fallback available, try json model anyway (may timeout)
+    # No fallback available — truncate hint and try json model
     logger.warning(
-        "Prompt large for %s (~%d tokens, limit %d) but no fallback configured",
+        "Prompt large for %s (~%d tokens, limit %d), will attempt with truncation",
         json_model, est_tokens, max_tokens,
     )
     return json_model, True
+
+
+def truncate_for_json_model(
+    content: str,
+    lexora_max_tokens: int | None,
+    system_prompt_chars: int = 1000,
+    safety_margin: float = 0.5,
+) -> str:
+    """Truncate content to fit within JSON model's token limit.
+
+    Keeps the first portion of the content that fits within the model's
+    estimated token budget (after accounting for system prompt and output).
+    """
+    if lexora_max_tokens is None:
+        return content
+
+    # Budget: max_tokens * safety_margin - system_prompt overhead, then /2 for CJK
+    available_chars = int(lexora_max_tokens * safety_margin / 2) - system_prompt_chars
+    if available_chars <= 0 or len(content) <= available_chars:
+        return content
+
+    truncated = content[:available_chars]
+    # Try to cut at a clean line break
+    last_newline = truncated.rfind("\n")
+    if last_newline > available_chars * 0.7:
+        truncated = truncated[:last_newline]
+
+    return truncated + "\n\n... (以下省略、上記の内容に基づいてタスクを生成してください)"

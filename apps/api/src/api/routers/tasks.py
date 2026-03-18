@@ -131,8 +131,25 @@ async def generate_tasks(
                 ),
             ]
 
-            from api.services.llm_model_selector import select_json_model
+            from api.services.llm_model_selector import select_json_model, truncate_for_json_model
+
             chosen_model, use_json_mode = await select_json_model(lexora, llm_messages, fallback_model=model)
+
+            # If still using JSON model but prompt is large, truncate the design content
+            if use_json_mode:
+                max_tokens = await lexora.get_model_max_tokens(chosen_model) if chosen_model else None
+                if max_tokens:
+                    truncated_content = truncate_for_json_model(design_content, max_tokens)
+                    if len(truncated_content) < len(design_content):
+                        logger.info("Truncated design content from %d to %d chars for JSON model", len(design_content), len(truncated_content))
+                        llm_messages[1] = ChatMessage(
+                            role="user",
+                            content=(
+                                f"Here is the design document:\n\n{truncated_content}\n\n"
+                                "Generate implementation tasks with dependencies."
+                            ),
+                        )
+
             raw_response = await lexora.complete(llm_messages, model=chosen_model, json_mode=use_json_mode)
 
             try:
