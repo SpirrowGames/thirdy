@@ -120,6 +120,29 @@ export default function ConversationPage() {
   const { reports: auditReports } = useAudits(conversationId);
   const { reports: watchReports } = useWatches(conversationId);
 
+  // Background extraction status indicator
+  // States: idle → analyzing (after chat done) → updated (spec changed) → idle (auto-dismiss)
+  const [extractionStatus, setExtractionStatus] = useState<"idle" | "analyzing" | "updated">("idle");
+  const extractionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // When streaming finishes (messages count increases from assistant), start "analyzing"
+  const prevMessageCount = useRef(messages.length);
+  useEffect(() => {
+    const currentCount = messages.length;
+    if (currentCount > prevMessageCount.current) {
+      const lastMsg = messages[currentCount - 1];
+      if (lastMsg?.role === "assistant") {
+        setExtractionStatus("analyzing");
+        // Auto-dismiss after 45s if no spec update detected
+        if (extractionTimerRef.current) clearTimeout(extractionTimerRef.current);
+        extractionTimerRef.current = setTimeout(() => {
+          setExtractionStatus((s) => s === "analyzing" ? "idle" : s);
+        }, 45000);
+      }
+    }
+    prevMessageCount.current = currentCount;
+  }, [messages.length, messages]);
+
   // Track spec auto-updates: detect when specs change while not on the specs tab
   const specFingerprint = specs.map((s) => `${s.id}:${s.updated_at}`).join(",");
   const prevSpecFingerprint = useRef(specFingerprint);
@@ -127,8 +150,12 @@ export default function ConversationPage() {
 
   useEffect(() => {
     if (specFingerprint !== prevSpecFingerprint.current) {
-      if (prevSpecFingerprint.current !== "" && activeTab !== "specs") {
-        setSpecUpdated(true);
+      if (prevSpecFingerprint.current !== "") {
+        if (activeTab !== "specs") setSpecUpdated(true);
+        // Update extraction status
+        if (extractionTimerRef.current) clearTimeout(extractionTimerRef.current);
+        setExtractionStatus("updated");
+        extractionTimerRef.current = setTimeout(() => setExtractionStatus("idle"), 5000);
       }
       prevSpecFingerprint.current = specFingerprint;
     }
@@ -291,6 +318,23 @@ export default function ConversationPage() {
         {error && (
           <div className="mx-4 mb-2 rounded bg-destructive/10 p-2 text-sm text-destructive">
             {error}
+          </div>
+        )}
+
+        {extractionStatus !== "idle" && (
+          <div className="mx-4 mb-1 flex items-center gap-2 text-xs text-muted-foreground">
+            {extractionStatus === "analyzing" && (
+              <>
+                <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-yellow-500" />
+                仕様を分析中...
+              </>
+            )}
+            {extractionStatus === "updated" && (
+              <>
+                <span className="inline-block h-1.5 w-1.5 rounded-full bg-green-500" />
+                仕様が更新されました
+              </>
+            )}
           </div>
         )}
 
