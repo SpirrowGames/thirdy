@@ -116,6 +116,16 @@ async def run_auto_pipeline(
     if not tasks_data:
         return {"error": "No tasks generated"}
 
+    # Cap at 20 tasks max and deduplicate by title
+    seen_titles: set[str] = set()
+    unique_tasks = []
+    for td in tasks_data:
+        title = td.get("title", "")
+        if title.lower() not in seen_titles:
+            seen_titles.add(title.lower())
+            unique_tasks.append(td)
+    tasks_data = unique_tasks[:20]
+
     # Save tasks
     task_ids = []
     async with session_factory() as s:
