@@ -261,6 +261,11 @@ async def update_specification(
     db: AsyncSession = Depends(get_db),
 ):
     spec = await _get_user_specification(spec_id, user, db)
+    if body.status is not None and body.status.value == "approved" and not spec.content:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot approve a specification with empty content.",
+        )
     if body.title is not None:
         spec.title = body.title
     if body.status is not None:

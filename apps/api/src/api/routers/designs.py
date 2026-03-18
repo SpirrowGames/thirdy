@@ -349,6 +349,11 @@ async def update_design(
     db: AsyncSession = Depends(get_db),
 ):
     design = await _get_user_design(design_id, user, db)
+    if body.status is not None and body.status.value == "approved" and not design.content:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot approve a design with empty content. Please regenerate first.",
+        )
     if body.title is not None:
         design.title = body.title
     if body.status is not None:
