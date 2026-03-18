@@ -239,6 +239,9 @@ class Settings(BaseSettings):
         "IMPORTANT: Output ONLY the JSON object. Do NOT include any thinking, reasoning, or explanation. /no_think"
     )
 
+    # LLM fallback for large prompts (when JSON model limit exceeded)
+    lexora_fallback_model: str = ""  # e.g., claude-sonnet-4-20250514
+
     # GitHub
     github_token: str = ""
     github_owner: str = ""  # Legacy: used as fallback

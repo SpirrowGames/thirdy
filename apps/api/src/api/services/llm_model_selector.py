@@ -27,7 +27,7 @@ async def select_json_model(
     Returns:
         (model_name, use_json_mode) tuple.
         - If JSON model can handle it: (json_model, True)
-        - If too large: (fallback_model, False)
+        - If too large: (fallback_model or lexora_fallback_model, False)
     """
     json_model = settings.lexora_json_model
     if not json_model:
@@ -45,8 +45,18 @@ async def select_json_model(
     if est_tokens < max_tokens * safety_margin:
         return json_model, True
 
-    logger.info(
-        "Prompt too large for %s (~%d tokens, limit %d), falling back to default",
+    # Fallback: prefer configured fallback model > caller's fallback > json model anyway
+    effective_fallback = settings.lexora_fallback_model or fallback_model
+    if effective_fallback:
+        logger.info(
+            "Prompt too large for %s (~%d tokens, limit %d), falling back to %s",
+            json_model, est_tokens, max_tokens, effective_fallback,
+        )
+        return effective_fallback, False
+
+    # No fallback available, try json model anyway (may timeout)
+    logger.warning(
+        "Prompt large for %s (~%d tokens, limit %d) but no fallback configured",
         json_model, est_tokens, max_tokens,
     )
-    return fallback_model, False
+    return json_model, True
