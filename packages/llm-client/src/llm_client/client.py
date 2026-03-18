@@ -15,10 +15,28 @@ class LexoraClient:
         self._http = http_client
         self._base_url = base_url.rstrip("/")
         self._default_model = default_model
+        self._model_limits: dict[str, int] = {}  # model -> max_model_len cache
 
     @property
     def completions_url(self) -> str:
         return f"{self._base_url}/v1/chat/completions"
+
+    async def get_model_max_tokens(self, model: str) -> int | None:
+        """Get max_model_len for a model from /v1/models. Cached after first call."""
+        if model in self._model_limits:
+            return self._model_limits[model]
+        try:
+            resp = await self._http.get(f"{self._base_url}/v1/models", timeout=10.0)
+            if resp.status_code == 200:
+                data = resp.json()
+                for m in data.get("data", []):
+                    mid = m.get("id", "")
+                    limit = m.get("max_model_len")
+                    if limit:
+                        self._model_limits[mid] = int(limit)
+            return self._model_limits.get(model)
+        except Exception:
+            return None
 
     async def complete(self, messages: list[ChatMessage], model: str | None = None, json_mode: bool = False) -> str:
         """Non-streaming completion. Use json_mode=True for structured JSON output."""
