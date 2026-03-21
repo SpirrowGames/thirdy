@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useSpecs } from "@/hooks/use-specs";
 import { useSpecReviews } from "@/hooks/use-spec-reviews";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -12,9 +13,8 @@ import type {
   ReviewIssueCategory,
 } from "@/types/spec-review";
 
-interface SpecReviewPanelProps {
+interface SpecReviewStandalonePanelProps {
   conversationId: string | null;
-  specId: string | null;
   onSendToChat?: (text: string) => void;
 }
 
@@ -70,26 +70,19 @@ function ReviewDetail({
 
   const tabs: { key: Tab; label: string; count: number }[] = [
     { key: "issues", label: "Issues", count: review.issues.length },
-    {
-      key: "suggestions",
-      label: "Suggestions",
-      count: review.suggestions.length,
-    },
+    { key: "suggestions", label: "Suggestions", count: review.suggestions.length },
     { key: "questions", label: "Questions", count: review.questions.length },
   ];
 
   return (
     <div className="rounded-lg border p-3 space-y-2">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           {review.summary ? (
             <>
               <Badge
                 variant="secondary"
-                className={
-                  badgeColor[review.summary.quality_badge] ?? ""
-                }
+                className={badgeColor[review.summary.quality_badge] ?? ""}
               >
                 {review.summary.quality_badge.replace("_", " ")}
               </Badge>
@@ -119,7 +112,6 @@ function ReviewDetail({
         </div>
       </div>
 
-      {/* Status indicators */}
       {review.status === "pending" && (
         <p className="text-xs text-muted-foreground animate-pulse">
           Review queued...
@@ -133,7 +125,6 @@ function ReviewDetail({
 
       {review.status === "completed" && (
         <>
-          {/* Summary counts */}
           {review.summary && (
             <div className="flex gap-3 text-xs text-muted-foreground">
               <span>{review.summary.total_issues} issues</span>
@@ -153,7 +144,6 @@ function ReviewDetail({
 
           {expanded && (
             <>
-              {/* Tab bar */}
               <div className="flex gap-1 border-b pb-1">
                 {tabs.map((tab) => (
                   <button
@@ -170,52 +160,36 @@ function ReviewDetail({
                 ))}
               </div>
 
-              {/* Issues tab */}
               {activeTab === "issues" && (
                 <div className="space-y-2 pt-1">
                   {review.issues.length === 0 ? (
-                    <p className="text-xs text-muted-foreground py-2">
-                      No issues found.
-                    </p>
+                    <p className="text-xs text-muted-foreground py-2">No issues found.</p>
                   ) : (
                     review.issues.map((issue, i) => (
-                      <div
-                        key={i}
-                        className="rounded border bg-muted/30 p-2 space-y-1"
-                      >
+                      <div key={i} className="rounded border bg-muted/30 p-2 space-y-1">
                         <div className="flex items-center gap-1.5">
-                          <Badge
-                            variant="secondary"
-                            className={`text-[10px] ${severityColor[issue.severity]}`}
-                          >
+                          <Badge variant="secondary" className={`text-[10px] ${severityColor[issue.severity]}`}>
                             {issue.severity}
                           </Badge>
                           <Badge variant="outline" className="text-[10px]">
                             {categoryLabel[issue.category] ?? issue.category}
                           </Badge>
                           {issue.location && (
-                            <span className="text-[10px] text-muted-foreground">
-                              {issue.location}
-                            </span>
+                            <span className="text-[10px] text-muted-foreground">{issue.location}</span>
                           )}
                         </div>
                         <p className="text-xs font-medium">{issue.title}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {issue.description}
-                        </p>
+                        <p className="text-xs text-muted-foreground">{issue.description}</p>
                       </div>
                     ))
                   )}
                 </div>
               )}
 
-              {/* Suggestions tab */}
               {activeTab === "suggestions" && (
                 <div className="space-y-2 pt-1">
                   {review.suggestions.length === 0 ? (
-                    <p className="text-xs text-muted-foreground py-2">
-                      No suggestions.
-                    </p>
+                    <p className="text-xs text-muted-foreground py-2">No suggestions.</p>
                   ) : (
                     review.suggestions.map((suggestion, i) => (
                       <SuggestionItem
@@ -231,33 +205,20 @@ function ReviewDetail({
                 </div>
               )}
 
-              {/* Questions tab */}
               {activeTab === "questions" && (
                 <div className="space-y-2 pt-1">
                   {review.questions.length === 0 ? (
-                    <p className="text-xs text-muted-foreground py-2">
-                      No questions.
-                    </p>
+                    <p className="text-xs text-muted-foreground py-2">No questions.</p>
                   ) : (
                     review.questions.map((q, i) => (
-                      <div
-                        key={i}
-                        className="rounded border bg-muted/30 p-2 space-y-1"
-                      >
+                      <div key={i} className="rounded border bg-muted/30 p-2 space-y-1">
                         <div className="flex items-center gap-1.5">
-                          <Badge
-                            variant="secondary"
-                            className={`text-[10px] ${priorityColor[q.priority]}`}
-                          >
+                          <Badge variant="secondary" className={`text-[10px] ${priorityColor[q.priority]}`}>
                             {q.priority}
                           </Badge>
                         </div>
                         <p className="text-xs font-medium">{q.question}</p>
-                        {q.context && (
-                          <p className="text-xs text-muted-foreground">
-                            {q.context}
-                          </p>
-                        )}
+                        {q.context && <p className="text-xs text-muted-foreground">{q.context}</p>}
                         {onSendToChat && (
                           <Button
                             variant="ghost"
@@ -295,25 +256,16 @@ function SuggestionItem({
   onDismiss: (reviewId: string, idx: number) => void;
 }) {
   return (
-    <div
-      className={`rounded border bg-muted/30 p-2 space-y-1 ${suggestionStatusColor[suggestion.status] ?? ""}`}
-    >
+    <div className={`rounded border bg-muted/30 p-2 space-y-1 ${suggestionStatusColor[suggestion.status] ?? ""}`}>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-1.5">
-          <Badge
-            variant="secondary"
-            className={`text-[10px] ${severityColor[suggestion.severity]}`}
-          >
+          <Badge variant="secondary" className={`text-[10px] ${severityColor[suggestion.severity]}`}>
             {suggestion.severity}
           </Badge>
           {suggestion.status !== "pending" && (
             <Badge
               variant="outline"
-              className={`text-[10px] ${
-                suggestion.status === "applied"
-                  ? "text-green-600"
-                  : "text-muted-foreground"
-              }`}
+              className={`text-[10px] ${suggestion.status === "applied" ? "text-green-600" : "text-muted-foreground"}`}
             >
               {suggestion.status}
             </Badge>
@@ -321,20 +273,10 @@ function SuggestionItem({
         </div>
         {suggestion.status === "pending" && (
           <div className="flex gap-1">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-6 px-2 text-xs text-green-600"
-              onClick={() => onApply(reviewId, index)}
-            >
+            <Button variant="ghost" size="sm" className="h-6 px-2 text-xs text-green-600" onClick={() => onApply(reviewId, index)}>
               Apply
             </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-6 px-2 text-xs text-muted-foreground"
-              onClick={() => onDismiss(reviewId, index)}
-            >
+            <Button variant="ghost" size="sm" className="h-6 px-2 text-xs text-muted-foreground" onClick={() => onDismiss(reviewId, index)}>
               Dismiss
             </Button>
           </div>
@@ -356,11 +298,16 @@ function SuggestionItem({
   );
 }
 
-export function SpecReviewPanel({
+export function SpecReviewStandalonePanel({
   conversationId,
-  specId,
   onSendToChat,
-}: SpecReviewPanelProps) {
+}: SpecReviewStandalonePanelProps) {
+  const { specs } = useSpecs(conversationId);
+  const [selectedSpecId, setSelectedSpecId] = useState<string | null>(null);
+
+  // Auto-select first spec if none selected
+  const effectiveSpecId = selectedSpecId ?? specs[0]?.id ?? null;
+
   const {
     reviews,
     isLoading,
@@ -370,67 +317,98 @@ export function SpecReviewPanel({
     applySuggestion,
     dismissSuggestion,
     deleteReview,
-  } = useSpecReviews(conversationId, specId);
+  } = useSpecReviews(conversationId, effectiveSpecId);
 
   const handleApply = async (reviewId: string, idx: number) => {
-    // First apply with confirm=true
     await applySuggestion(reviewId, idx, true);
   };
 
+  const selectedSpec = specs.find((s) => s.id === effectiveSpecId);
+
   return (
-    <div className="space-y-3">
-      {/* Trigger buttons */}
-      <div className="flex gap-2">
-        <Button
-          size="sm"
-          className="flex-1"
-          onClick={() => triggerReview("full")}
-          disabled={!conversationId || !specId || isTriggering}
-        >
-          {isTriggering ? "Queuing..." : "Review Spec"}
-        </Button>
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={() => triggerReview("quick")}
-          disabled={!conversationId || !specId || isTriggering}
-        >
-          Quick
-        </Button>
+    <div className="flex h-full flex-col">
+      {/* Header: spec selector + review trigger */}
+      <div className="border-b p-3 space-y-2">
+        {specs.length > 1 && (
+          <select
+            value={effectiveSpecId ?? ""}
+            onChange={(e) => setSelectedSpecId(e.target.value || null)}
+            className="w-full rounded border bg-background px-2 py-1 text-xs"
+          >
+            {specs.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.title} ({s.status})
+              </option>
+            ))}
+          </select>
+        )}
+        {selectedSpec && (
+          <div className="text-xs text-muted-foreground truncate">
+            {selectedSpec.title}
+          </div>
+        )}
+        <div className="flex gap-2">
+          <Button
+            size="sm"
+            className="flex-1"
+            onClick={() => triggerReview("full")}
+            disabled={!conversationId || !effectiveSpecId || isTriggering}
+          >
+            {isTriggering ? "Queuing..." : "Review Spec"}
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => triggerReview("quick")}
+            disabled={!conversationId || !effectiveSpecId || isTriggering}
+          >
+            Quick
+          </Button>
+        </div>
       </div>
 
       {triggerError && (
-        <div className="rounded bg-destructive/10 p-2 text-xs text-destructive">
+        <div className="border-b bg-destructive/10 p-3 text-xs text-destructive">
           {triggerError}
         </div>
       )}
 
-      {/* Reviews list */}
-      {isLoading ? (
-        <div className="space-y-3">
-          {Array.from({ length: 1 }).map((_, i) => (
-            <div key={i} className="h-24 animate-pulse rounded bg-muted" />
-          ))}
-        </div>
-      ) : reviews.length === 0 ? (
-        <p className="py-4 text-center text-xs text-muted-foreground">
-          No reviews yet. Click &quot;Review Spec&quot; to analyze this
-          specification.
-        </p>
-      ) : (
-        <div className="space-y-3">
-          {reviews.map((review) => (
-            <ReviewDetail
-              key={review.id}
-              review={review}
-              onApply={handleApply}
-              onDismiss={dismissSuggestion}
-              onSendToChat={onSendToChat}
-              onDelete={deleteReview}
-            />
-          ))}
-        </div>
-      )}
+      <ScrollArea className="flex-1 p-3">
+        {!effectiveSpecId ? (
+          <p className="py-8 text-center text-sm text-muted-foreground">
+            No specifications yet. Extract a spec first, then review it here.
+          </p>
+        ) : isLoading ? (
+          <div className="space-y-3">
+            {Array.from({ length: 1 }).map((_, i) => (
+              <div key={i} className="h-24 animate-pulse rounded bg-muted" />
+            ))}
+          </div>
+        ) : reviews.length === 0 ? (
+          <div className="py-8 text-center space-y-2">
+            <p className="text-sm text-muted-foreground">
+              No reviews yet.
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Click &quot;Review Spec&quot; to let AI analyze your specification
+              for contradictions, gaps, and improvements.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {reviews.map((review) => (
+              <ReviewDetail
+                key={review.id}
+                review={review}
+                onApply={handleApply}
+                onDismiss={dismissSuggestion}
+                onSendToChat={onSendToChat}
+                onDelete={deleteReview}
+              />
+            ))}
+          </div>
+        )}
+      </ScrollArea>
     </div>
   );
 }

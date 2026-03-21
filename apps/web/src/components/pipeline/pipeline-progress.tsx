@@ -8,6 +8,7 @@ interface PipelineStep {
 
 interface PipelineProgressProps {
   specsApproved: boolean;
+  reviewCompleted: boolean;
   designsApproved: boolean;
   decisionsResolved: boolean;
   tasksGenerated: boolean;
@@ -19,10 +20,13 @@ interface PipelineProgressProps {
   watchesCompleted: boolean;
   activeTab: string;
   onTabChange: (tab: string) => void;
+  reviewHasIssues?: boolean;
+  reviewUpdated?: boolean;
 }
 
 export function PipelineProgress({
   specsApproved,
+  reviewCompleted,
   designsApproved,
   decisionsResolved,
   tasksGenerated,
@@ -34,9 +38,12 @@ export function PipelineProgress({
   watchesCompleted,
   activeTab,
   onTabChange,
+  reviewHasIssues,
+  reviewUpdated,
 }: PipelineProgressProps) {
   const steps: PipelineStep[] = [
     { key: "specs", label: "Spec", completed: specsApproved },
+    { key: "review", label: "Review", completed: reviewCompleted },
     { key: "designs", label: "Design", completed: designsApproved },
     { key: "decisions", label: "Decisions", completed: decisionsResolved },
     { key: "tasks", label: "Tasks", completed: tasksGenerated },
@@ -64,11 +71,15 @@ export function PipelineProgress({
           >
             <span
               className={`inline-block h-2 w-2 shrink-0 rounded-full ${
-                step.completed
-                  ? "bg-green-500"
-                  : isActive
-                    ? "bg-foreground"
-                    : "border border-muted-foreground/50"
+                step.key === "review" && reviewUpdated
+                  ? "bg-orange-500 animate-pulse"
+                  : step.key === "review" && reviewHasIssues
+                    ? "bg-orange-500"
+                    : step.completed
+                      ? "bg-green-500"
+                      : isActive
+                        ? "bg-foreground"
+                        : "border border-muted-foreground/50"
               }`}
             />
             {step.label}

@@ -14,6 +14,7 @@ import { useVoiceTranscripts } from "@/hooks/use-voice";
 import { useGitHubIssues } from "@/hooks/use-github-issues";
 import { useAudits } from "@/hooks/use-audits";
 import { useWatches } from "@/hooks/use-watches";
+import { useSpecReviews } from "@/hooks/use-spec-reviews";
 import { MessageList } from "@/components/chat/message-list";
 import { ChatInput } from "@/components/chat/chat-input";
 import { SpecPanel } from "@/components/specs/spec-panel";
@@ -26,6 +27,7 @@ import { VoicePanel } from "@/components/voice/voice-panel";
 import { IssuePanel } from "@/components/issues/issue-panel";
 import { AuditPanel } from "@/components/audits/audit-panel";
 import { WatchPanel } from "@/components/watches/watch-panel";
+import { SpecReviewStandalonePanel } from "@/components/specs/spec-review-panel";
 import { PipelineProgress } from "@/components/pipeline/pipeline-progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -120,6 +122,10 @@ export default function ConversationPage() {
   const { reports: auditReports } = useAudits(conversationId);
   const { reports: watchReports } = useWatches(conversationId);
 
+  // Spec review: track for first spec (pulse badge when new reviews arrive)
+  const firstSpecId = specs[0]?.id ?? null;
+  const { reviews: specReviews } = useSpecReviews(conversationId, firstSpecId);
+
   // Background extraction status indicator
   // States: idle → analyzing (after chat done) → updated (spec changed) → idle (auto-dismiss)
   const [extractionStatus, setExtractionStatus] = useState<"idle" | "analyzing" | "updated">("idle");
@@ -186,6 +192,34 @@ export default function ConversationPage() {
       setDecisionUpdated(false);
     }
   }, [activeTab]);
+
+  // Track spec review updates — pulse badge when new completed reviews appear
+  const reviewFingerprint = specReviews
+    .filter((r) => r.status === "completed")
+    .map((r) => `${r.id}:${r.updated_at}`)
+    .join(",");
+  const prevReviewFingerprint = useRef(reviewFingerprint);
+  const [reviewUpdated, setReviewUpdated] = useState(false);
+
+  useEffect(() => {
+    if (reviewFingerprint !== prevReviewFingerprint.current) {
+      if (prevReviewFingerprint.current !== "" && activeTab !== "review") {
+        setReviewUpdated(true);
+      }
+      prevReviewFingerprint.current = reviewFingerprint;
+    }
+  }, [reviewFingerprint, activeTab]);
+
+  useEffect(() => {
+    if (activeTab === "review") {
+      setReviewUpdated(false);
+    }
+  }, [activeTab]);
+
+  const hasCompletedReviews = specReviews.some((r) => r.status === "completed");
+  const hasReviewIssues = specReviews.some(
+    (r) => r.status === "completed" && (r.summary?.total_issues ?? 0) > 0,
+  );
 
   const hasApprovedSpec = specs.some((s) => s.status === "approved");
   const hasApprovedDesign = designs.some((d) => d.status === "approved");
@@ -351,6 +385,7 @@ export default function ConversationPage() {
           />
           <PipelineProgress
             specsApproved={hasApprovedSpec}
+            reviewCompleted={hasCompletedReviews}
             designsApproved={hasApprovedDesign}
             decisionsResolved={hasDecisionsResolved}
             tasksGenerated={hasGeneratedTasks}
@@ -362,6 +397,8 @@ export default function ConversationPage() {
             watchesCompleted={hasWatchReports}
             activeTab={activeTab}
             onTabChange={setActiveTab}
+            reviewHasIssues={hasReviewIssues}
+            reviewUpdated={reviewUpdated}
           />
           <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-1 min-h-0 flex-col">
             <TabsList className="mx-3 mt-1 flex flex-wrap w-full h-auto gap-0.5">
@@ -369,6 +406,15 @@ export default function ConversationPage() {
                 Specs
                 {specUpdated && (
                   <span className="ml-1 inline-block h-2 w-2 rounded-full bg-blue-500 animate-pulse" />
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="review">
+                Review
+                {reviewUpdated && (
+                  <span className="ml-1 inline-block h-2 w-2 rounded-full bg-orange-500 animate-pulse" />
+                )}
+                {!reviewUpdated && hasReviewIssues && (
+                  <span className="ml-1 inline-block h-2 w-2 rounded-full bg-orange-500" />
                 )}
               </TabsTrigger>
               <TabsTrigger value="designs">Designs</TabsTrigger>
@@ -390,6 +436,12 @@ export default function ConversationPage() {
               <SpecPanel
                 conversationId={conversationId}
                 onSpecApproved={handleSpecApproved}
+              />
+            </TabsContent>
+            <TabsContent value="review" className="flex-1 overflow-y-auto">
+              <SpecReviewStandalonePanel
+                conversationId={conversationId}
+                onSendToChat={sendMessage}
               />
             </TabsContent>
             <TabsContent value="designs" className="flex-1 overflow-y-auto">
