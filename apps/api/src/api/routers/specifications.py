@@ -257,10 +257,12 @@ async def get_specification(
 async def update_specification(
     spec_id: UUID,
     body: SpecUpdate,
+    request: Request,
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     spec = await _get_user_specification(spec_id, user, db)
+    old_status = spec.status
     if body.status is not None and body.status.value == "approved" and not spec.content:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -274,6 +276,30 @@ async def update_specification(
         spec.content = body.content
     await db.commit()
     await db.refresh(spec)
+
+    # Auto-trigger spec review on approve
+    if (
+        body.status is not None
+        and body.status.value == "approved"
+        and old_status != "approved"
+    ):
+        try:
+            from api.services.background_job_service import BackgroundJobService
+            redis_pool = request.app.state.redis_pool
+            job_service = BackgroundJobService(redis_pool=redis_pool, db=db)
+            await job_service.enqueue(
+                job_type="spec_review",
+                func_name="spec_review_job",
+                payload={
+                    "specification_id": str(spec.id),
+                    "conversation_id": str(spec.conversation_id),
+                    "scope": "full",
+                },
+            )
+            logger.info("Auto-triggered spec review on approve for spec %s", spec.id)
+        except Exception as e:
+            logger.warning("Failed to auto-trigger spec review: %s", e)
+
     return spec
 
 

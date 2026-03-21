@@ -239,6 +239,9 @@ class Settings(BaseSettings):
         "IMPORTANT: Output ONLY the JSON object. Do NOT include any thinking, reasoning, or explanation. /no_think"
     )
 
+    # Spec review auto-trigger: review after N incremental spec updates
+    spec_review_auto_trigger_interval: int = 3
+
     # LLM fallback for large prompts (when JSON model limit exceeded)
     lexora_fallback_model: str = ""  # e.g., claude-sonnet-4-20250514
 

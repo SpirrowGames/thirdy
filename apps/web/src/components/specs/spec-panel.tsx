@@ -8,13 +8,15 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ErrorBanner } from "@/components/ui/error-banner";
 import { SpecPreview } from "./spec-preview";
+import { SpecReviewPanel } from "./spec-review-panel";
 
 interface SpecPanelProps {
   conversationId: string | null;
   onSpecApproved?: (specId: string) => void;
+  onSendToChat?: (text: string) => void;
 }
 
-export function SpecPanel({ conversationId, onSpecApproved }: SpecPanelProps) {
+export function SpecPanel({ conversationId, onSpecApproved, onSendToChat }: SpecPanelProps) {
   const {
     specs,
     isLoading,
@@ -76,17 +78,23 @@ export function SpecPanel({ conversationId, onSpecApproved }: SpecPanelProps) {
         ) : (
           <div className="space-y-3">
             {specs.map((spec) => (
-              <SpecPreview
-                key={spec.id}
-                spec={spec}
-                onStatusChange={(id, status) => {
-                  updateSpec(id, { status });
-                  if (status === "approved" && onSpecApproved) {
-                    onSpecApproved(id);
-                  }
-                }}
-                onDelete={deleteSpec}
-              />
+              <div key={spec.id} className="space-y-3">
+                <SpecPreview
+                  spec={spec}
+                  onStatusChange={(id, status) => {
+                    updateSpec(id, { status });
+                    if (status === "approved" && onSpecApproved) {
+                      onSpecApproved(id);
+                    }
+                  }}
+                  onDelete={deleteSpec}
+                />
+                <SpecReviewPanel
+                  conversationId={conversationId}
+                  specId={spec.id}
+                  onSendToChat={onSendToChat}
+                />
+              </div>
             ))}
           </div>
         )}

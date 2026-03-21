@@ -92,6 +92,7 @@ def create_app() -> FastAPI:
     from api.routers.metrics import router as metrics_router
     from api.routers.github_repos import router as github_repos_router
     from api.routers.dashboard import router as dashboard_router
+    from api.routers.spec_reviews import router as spec_reviews_router
 
     app.include_router(health_router)
     app.include_router(auth_router)
@@ -116,6 +117,7 @@ def create_app() -> FastAPI:
     app.include_router(metrics_router)
     app.include_router(github_repos_router)
     app.include_router(dashboard_router)
+    app.include_router(spec_reviews_router)
 
     return app
 

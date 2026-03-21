@@ -3,6 +3,7 @@ import logging
 from datetime import datetime, timezone
 from uuid import UUID
 
+from arq.connections import ArqRedis
 from sqlalchemy import select
 
 from api.db.models.background_job import BackgroundJob
@@ -43,6 +44,64 @@ async def _update_job_status(
             job.error = error
 
         await session.commit()
+
+
+async def spec_review_job(ctx: dict, job_id: str, payload: dict) -> dict:
+    """Spec Review job: deep analysis of a specification document."""
+    from api.services.spec_review_service import SpecReviewService
+
+    await _update_job_status(ctx, job_id, "running")
+    try:
+        specification_id = payload["specification_id"]
+        conversation_id = payload["conversation_id"]
+        scope = payload.get("scope", "full")
+
+        async with ctx["session_factory"]() as session:
+            service = SpecReviewService(session, ctx["lexora_client"])
+            review = await service.run_review(
+                specification_id,
+                conversation_id,
+                job_id=job_id,
+                scope=scope,
+            )
+
+        result = {
+            "review_id": str(review.id),
+            "score": review.summary.get("quality_score") if review.summary else None,
+            "badge": review.summary.get("quality_badge") if review.summary else None,
+            "total_issues": review.summary.get("total_issues") if review.summary else 0,
+        }
+        await _update_job_status(ctx, job_id, "completed", result=result)
+
+        # Create notification
+        try:
+            async with ctx["session_factory"]() as session:
+                from api.db.models.notification import Notification
+                from api.db.models import Conversation
+                from sqlalchemy import select as sa_select
+                conv_result = await session.execute(
+                    sa_select(Conversation).where(Conversation.id == UUID(conversation_id))
+                )
+                conv = conv_result.scalar_one_or_none()
+                if conv:
+                    total_issues = result.get("total_issues", 0)
+                    badge = result.get("badge", "")
+                    notification = Notification(
+                        user_id=conv.user_id,
+                        type="spec_review_complete",
+                        title="仕様書レビュー完了",
+                        body=f"品質スコア: {result.get('score', '?')}/100 ({badge}), {total_issues}件の問題を検出",
+                        link=f"/chat/{conversation_id}",
+                    )
+                    session.add(notification)
+                    await session.commit()
+        except Exception as notify_err:
+            logger.warning("Failed to create spec review notification: %s", notify_err)
+
+        return result
+    except Exception as exc:
+        await _update_job_status(ctx, job_id, "failed", error=str(exc))
+        raise
 
 
 async def audit_conversation_job(ctx: dict, job_id: str, payload: dict) -> dict:
@@ -171,6 +230,38 @@ async def classify_and_extract_spec_job(
                 await session.commit()
     except Exception as notify_err:
         logger.warning("Failed to create spec notification: %s", notify_err)
+
+    # Step 4: Auto-trigger spec review after N incremental updates
+    try:
+        from api.config import settings as app_settings
+        interval = getattr(app_settings, "spec_review_auto_trigger_interval", 3)
+        redis: ArqRedis | None = ctx.get("redis")
+        if redis is None:
+            # Fallback: try to import and create a connection
+            from api.worker.redis_pool import create_redis_pool
+            redis = await create_redis_pool()
+            ctx["redis"] = redis
+        counter_key = f"thirdy:spec_update_count:{spec.id}"
+        count = await redis.incr(counter_key)
+        if count >= interval:
+            await redis.delete(counter_key)
+            # Enqueue spec review job
+            await redis.enqueue_job(
+                "spec_review_job",
+                _job_id=f"auto-review-{spec.id}-{count}",
+                job_id=f"auto-review-{spec.id}-{count}",
+                payload={
+                    "specification_id": str(spec.id),
+                    "conversation_id": conversation_id,
+                    "scope": "quick",
+                },
+            )
+            logger.info(
+                "Auto-triggered spec review after %d incremental updates for spec %s",
+                count, spec.id,
+            )
+    except Exception as auto_review_err:
+        logger.warning("Failed to auto-trigger spec review: %s", auto_review_err)
 
     return {
         "classified": True,

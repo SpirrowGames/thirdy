@@ -23,3 +23,6 @@ class Specification(TimestampMixin, Base):
     designs: Mapped[list["Design"]] = relationship(
         back_populates="specification", cascade="all, delete-orphan"
     )
+    spec_reviews: Mapped[list["SpecReview"]] = relationship(
+        back_populates="specification", cascade="all, delete-orphan"
+    )

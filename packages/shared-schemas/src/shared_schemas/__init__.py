@@ -15,6 +15,7 @@ from .github_issue import IssueStatus, GitHubIssueRead, GitHubIssueUpdate, Issue
 from .background_job import BackgroundJobRead, BackgroundJobEnqueue
 from .audit_report import FindingSeverity, FindingCategory, AuditFinding, AuditSummary, AuditReportRead, AuditTriggerRequest, AuditTriggerResponse
 from .watch_report import WatchSourceType, WatchImpactLevel, WatchFinding, WatchSummary, WatchReportRead, WatchTriggerRequest, WatchTriggerResponse
+from .spec_review import ReviewIssueSeverity, ReviewIssueCategory, SpecReviewIssue, SpecReviewSuggestion, SpecReviewQuestion, SpecReviewSummary, SpecReviewRead, SpecReviewTriggerRequest, SpecReviewTriggerResponse, SuggestionApplyRequest, SuggestionApplyResponse
 
 __all__ = [
     "BaseSchema",
@@ -93,4 +94,15 @@ __all__ = [
     "WatchReportRead",
     "WatchTriggerRequest",
     "WatchTriggerResponse",
+    "ReviewIssueSeverity",
+    "ReviewIssueCategory",
+    "SpecReviewIssue",
+    "SpecReviewSuggestion",
+    "SpecReviewQuestion",
+    "SpecReviewSummary",
+    "SpecReviewRead",
+    "SpecReviewTriggerRequest",
+    "SpecReviewTriggerResponse",
+    "SuggestionApplyRequest",
+    "SuggestionApplyResponse",
 ]

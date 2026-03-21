@@ -16,5 +16,6 @@ from .watch_report import WatchReport
 from .notification import Notification
 from .team import Team, TeamMember
 from .activity import Activity
+from .spec_review import SpecReview
 
-__all__ = ["User", "Conversation", "Message", "Specification", "DecisionPoint", "DecisionOption", "Design", "GeneratedTask", "GeneratedCode", "PullRequest", "VoteSession", "Vote", "VoiceTranscript", "GitHubIssue", "BackgroundJob", "AuditReport", "WatchReport", "Notification"]
+__all__ = ["User", "Conversation", "Message", "Specification", "DecisionPoint", "DecisionOption", "Design", "GeneratedTask", "GeneratedCode", "PullRequest", "VoteSession", "Vote", "VoiceTranscript", "GitHubIssue", "BackgroundJob", "AuditReport", "WatchReport", "Notification", "SpecReview"]
