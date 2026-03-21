@@ -52,7 +52,7 @@ async def spec_review_job(ctx: dict, job_id: str, payload: dict) -> dict:
 
     await _update_job_status(ctx, job_id, "running")
     try:
-        specification_id = payload["specification_id"]
+        specification_id = UUID(payload["specification_id"])
         conversation_id = payload["conversation_id"]
         scope = payload.get("scope", "full")
 
@@ -60,17 +60,17 @@ async def spec_review_job(ctx: dict, job_id: str, payload: dict) -> dict:
             service = SpecReviewService(session, ctx["lexora_client"])
             review = await service.run_review(
                 specification_id,
-                conversation_id,
+                UUID(conversation_id),
                 job_id=job_id,
                 scope=scope,
             )
-
-        result = {
-            "review_id": str(review.id),
-            "score": review.summary.get("quality_score") if review.summary else None,
-            "badge": review.summary.get("quality_badge") if review.summary else None,
-            "total_issues": review.summary.get("total_issues") if review.summary else 0,
-        }
+            # Extract result within session scope to avoid detached instance errors
+            result = {
+                "review_id": str(review.id),
+                "score": review.summary.get("quality_score") if review.summary else None,
+                "badge": review.summary.get("quality_badge") if review.summary else None,
+                "total_issues": review.summary.get("total_issues") if review.summary else 0,
+            }
         await _update_job_status(ctx, job_id, "completed", result=result)
 
         # Create notification

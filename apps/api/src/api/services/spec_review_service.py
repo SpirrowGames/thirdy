@@ -100,8 +100,13 @@ class SpecReviewService:
 
         # 2. Build prompt and call LLM
         messages = self._build_review_prompt(spec, scope)
-        json_model = settings.lexora_json_model or None
-        raw_response = await self.lexora.complete(messages, model=json_model, json_mode=True)
+        # Use default model (not JSON model) since spec review generates structured text
+        # JSON model (vLLM/Qwen) has limited context window, spec review needs longer context
+        raw_response = await self.lexora.complete(messages)
+
+        # Strip think tags from response
+        from llm_client import LexoraClient as LC
+        raw_response = LC._strip_think_tags(raw_response)
 
         # 3. Parse response
         parsed = self._parse_review_response(raw_response)
