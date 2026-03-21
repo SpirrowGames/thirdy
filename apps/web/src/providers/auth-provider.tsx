@@ -29,13 +29,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<UserRead | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
+  const verifyToken = useCallback(() => {
     const token = getToken();
     if (!token) {
       setIsLoading(false);
       return;
     }
 
+    setIsLoading(true);
     api
       .get<UserRead>("/auth/me")
       .then(setUser)
@@ -44,6 +45,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       })
       .finally(() => setIsLoading(false));
   }, []);
+
+  useEffect(() => {
+    verifyToken();
+  }, [verifyToken]);
+
+  // Re-verify when localStorage token changes (e.g. set by /auth/callback)
+  useEffect(() => {
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === "thirdy_token") {
+        verifyToken();
+      }
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, [verifyToken]);
 
   const logout = useCallback(() => {
     clearToken();

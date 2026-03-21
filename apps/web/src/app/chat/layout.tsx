@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
 import { useGoogleCalendar } from "@/hooks/use-google-calendar";
+import { getToken } from "@/lib/auth";
 import { ConversationList } from "@/components/sidebar/conversation-list";
 import { CostWidget } from "@/components/sidebar/cost-widget";
 import { NotificationBell } from "@/components/sidebar/notification-bell";
@@ -28,7 +29,7 @@ export default function ChatLayout({
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
+    if (!isLoading && !isAuthenticated && !getToken()) {
       router.replace("/login");
     }
   }, [isLoading, isAuthenticated, router]);
@@ -41,7 +42,16 @@ export default function ChatLayout({
     );
   }
 
-  if (!isAuthenticated) return null;
+  if (!isAuthenticated) {
+    if (getToken()) {
+      return (
+        <div className="flex h-screen items-center justify-center">
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      );
+    }
+    return null;
+  }
 
   return (
     <div className="flex h-screen overflow-hidden">

@@ -37,8 +37,8 @@ import type { ConversationRead } from "@/types/api";
 export default function ConversationPage() {
   const params = useParams();
   const conversationId = params.conversationId as string;
-  const [panelOpen, setPanelOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState("specs");
+  const [panelOpen, setPanelOpen] = useState(true);
+  const [activeTab, setActiveTab] = useState("decisions");
   const [preselectedSpecId, setPreselectedSpecId] = useState<string>();
   const [preselectedDesignId, setPreselectedDesignId] = useState<string>();
   const [preselectedTaskId, setPreselectedTaskId] = useState<string>();

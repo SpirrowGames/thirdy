@@ -7,6 +7,8 @@ export function getToken(): string | null {
 
 export function setToken(token: string): void {
   localStorage.setItem(TOKEN_KEY, token);
+  // Notify same-tab listeners (StorageEvent only fires cross-tab)
+  window.dispatchEvent(new StorageEvent("storage", { key: TOKEN_KEY, newValue: token }));
 }
 
 export function clearToken(): void {
