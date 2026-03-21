@@ -136,7 +136,7 @@ async def audit_conversation_job(ctx: dict, job_id: str, payload: dict) -> dict:
 
 
 async def watch_conversation_job(ctx: dict, job_id: str, payload: dict) -> dict:
-    """External Watch job: analyze project for external risks via LLM."""
+    """External Watch job: multi-source tech intelligence."""
     from api.services.watch_service import WatchService
 
     await _update_job_status(ctx, job_id, "running")
@@ -144,27 +144,94 @@ async def watch_conversation_job(ctx: dict, job_id: str, payload: dict) -> dict:
         conversation_id = payload["conversation_id"]
         model = payload.get("model")
         targets = payload.get("targets")
+        trigger_type = payload.get("trigger_type", "manual")
+        github_repo = payload.get("github_repo")
 
         async with ctx["session_factory"]() as session:
-            service = WatchService(session, ctx["lexora_client"])
+            service = WatchService(
+                session, ctx["lexora_client"],
+                http=ctx.get("http_client"),
+                redis=ctx.get("redis"),
+            )
             report = await service.run_watch(
                 conversation_id,
                 job_id=job_id,
                 model=model,
                 targets=targets,
+                trigger_type=trigger_type,
+                github_repo=github_repo,
             )
-
-        result = {
-            "report_id": str(report.id),
-            "highest_impact": report.summary.get("highest_impact") if report.summary else None,
-            "requires_action": report.summary.get("requires_action") if report.summary else False,
-            "total_findings": report.summary.get("total_findings") if report.summary else 0,
-        }
+            result = {
+                "report_id": str(report.id),
+                "highest_impact": report.summary.get("highest_impact") if report.summary else None,
+                "requires_action": report.summary.get("requires_action") if report.summary else False,
+                "total_findings": report.summary.get("total_findings") if report.summary else 0,
+                "new_findings": report.summary.get("new_findings") if report.summary else 0,
+            }
         await _update_job_status(ctx, job_id, "completed", result=result)
         return result
     except Exception as exc:
         await _update_job_status(ctx, job_id, "failed", error=str(exc))
         raise
+
+
+async def periodic_watch_job(ctx: dict) -> dict:
+    """Scheduled cron job: run watch for all active conversations with github_repo."""
+    from api.config import settings as app_settings
+    from api.db.models import Conversation
+    from api.services.watch_service import WatchService
+    from datetime import datetime, timedelta, timezone
+
+    if not app_settings.watch_cron_enabled:
+        return {"skipped": True, "reason": "watch_cron_enabled=False"}
+
+    async with ctx["session_factory"]() as session:
+        # Find conversations with github_repo set
+        result = await session.execute(
+            select(Conversation)
+            .where(Conversation.github_repo.isnot(None))
+            .where(Conversation.github_repo != "")
+        )
+        conversations = list(result.scalars().all())
+
+    scanned = 0
+    skipped = 0
+    errors = 0
+
+    for conv in conversations:
+        # Skip if recently scanned (within 20 hours)
+        async with ctx["session_factory"]() as session:
+            from api.db.models.watch_report import WatchReport
+            recent = await session.execute(
+                select(WatchReport)
+                .where(WatchReport.conversation_id == conv.id)
+                .where(WatchReport.created_at > datetime.now(timezone.utc) - timedelta(hours=20))
+                .limit(1)
+            )
+            if recent.scalar_one_or_none():
+                skipped += 1
+                continue
+
+        try:
+            async with ctx["session_factory"]() as session:
+                service = WatchService(
+                    session, ctx["lexora_client"],
+                    http=ctx.get("http_client"),
+                    redis=ctx.get("redis"),
+                )
+                await service.run_watch(
+                    conv.id,
+                    trigger_type="scheduled",
+                    github_repo=conv.github_repo,
+                )
+            scanned += 1
+            logger.info("Periodic watch completed for conversation %s", conv.id)
+        except Exception as e:
+            errors += 1
+            logger.warning("Periodic watch failed for %s: %s", conv.id, e)
+
+    logger.info("Periodic watch done: scanned=%d skipped=%d errors=%d", scanned, skipped, errors)
+    return {"scanned": scanned, "skipped": skipped, "errors": errors}
 
 
 async def classify_and_extract_spec_job(

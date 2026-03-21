@@ -126,6 +126,33 @@ export default function ConversationPage() {
   const firstSpecId = specs[0]?.id ?? null;
   const { reviews: specReviews } = useSpecReviews(conversationId, firstSpecId);
 
+  // Track watch report updates for pulse badge
+  const watchFingerprint = watchReports
+    .filter((r) => r.status === "completed")
+    .map((r) => `${r.id}:${r.updated_at}`)
+    .join(",");
+  const prevWatchFingerprint = useRef(watchFingerprint);
+  const [watchUpdated, setWatchUpdated] = useState(false);
+
+  useEffect(() => {
+    if (watchFingerprint !== prevWatchFingerprint.current) {
+      if (prevWatchFingerprint.current !== "" && activeTab !== "watches") {
+        setWatchUpdated(true);
+      }
+      prevWatchFingerprint.current = watchFingerprint;
+    }
+  }, [watchFingerprint, activeTab]);
+
+  useEffect(() => {
+    if (activeTab === "watches") {
+      setWatchUpdated(false);
+    }
+  }, [activeTab]);
+
+  const hasNewWatchFindings = watchReports.some(
+    (r) => r.status === "completed" && (r.summary?.new_findings ?? 0) > 0,
+  );
+
   // Background extraction status indicator
   // States: idle → analyzing (after chat done) → updated (spec changed) → idle (auto-dismiss)
   const [extractionStatus, setExtractionStatus] = useState<"idle" | "analyzing" | "updated">("idle");
@@ -430,7 +457,15 @@ export default function ConversationPage() {
               <TabsTrigger value="voice">Voice</TabsTrigger>
               <TabsTrigger value="issues">Issues</TabsTrigger>
               <TabsTrigger value="audits">Audit</TabsTrigger>
-              <TabsTrigger value="watches">Watch</TabsTrigger>
+              <TabsTrigger value="watches">
+                Watch
+                {watchUpdated && (
+                  <span className="ml-1 inline-block h-2 w-2 rounded-full bg-orange-500 animate-pulse" />
+                )}
+                {!watchUpdated && hasNewWatchFindings && (
+                  <span className="ml-1 inline-block h-2 w-2 rounded-full bg-orange-500" />
+                )}
+              </TabsTrigger>
             </TabsList>
             <TabsContent value="specs" className="flex-1 overflow-y-auto">
               <SpecPanel

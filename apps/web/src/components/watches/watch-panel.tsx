@@ -67,10 +67,17 @@ function WatchReportItem({
       </div>
 
       {report.summary && (
-        <p className="text-xs text-muted-foreground">
-          {report.summary.total_findings} finding
-          {report.summary.total_findings !== 1 ? "s" : ""}
-        </p>
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <span>
+            {report.summary.total_findings} finding
+            {report.summary.total_findings !== 1 ? "s" : ""}
+          </span>
+          {(report.summary.new_findings ?? 0) > 0 && (
+            <Badge variant="secondary" className="text-[10px] bg-orange-500/15 text-orange-700 dark:text-orange-400">
+              {report.summary.new_findings} new
+            </Badge>
+          )}
+        </div>
       )}
 
       {report.status === "pending" && (
@@ -113,6 +120,11 @@ function WatchReportItem({
                 <Badge variant="outline" className="text-[10px]">
                   {f.source_type.replace("_", " ")}
                 </Badge>
+                {f.is_new && (
+                  <Badge variant="secondary" className="text-[10px] bg-orange-500/15 text-orange-700 dark:text-orange-400 animate-pulse">
+                    NEW
+                  </Badge>
+                )}
               </div>
               <p className="text-xs font-medium">{f.title}</p>
               <p className="text-xs text-muted-foreground">{f.description}</p>

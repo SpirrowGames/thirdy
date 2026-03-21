@@ -59,6 +59,8 @@ async def trigger_watch(
             "conversation_id": str(conversation.id),
             "model": model,
             "targets": targets,
+            "trigger_type": "manual",
+            "github_repo": conversation.github_repo,
         },
     )
     return WatchTriggerResponse(

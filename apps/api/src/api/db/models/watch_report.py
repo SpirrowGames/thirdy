@@ -24,5 +24,6 @@ class WatchReport(TimestampMixin, Base):
     findings: Mapped[list | None] = mapped_column(JSON, server_default="[]")
     watch_targets: Mapped[list | None] = mapped_column(JSON, server_default="[]")
     status: Mapped[str] = mapped_column(String(20), server_default="completed")
+    trigger_type: Mapped[str] = mapped_column(String(20), server_default="'manual'")
 
     conversation: Mapped["Conversation"] = relationship(back_populates="watch_reports")

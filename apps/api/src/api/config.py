@@ -242,6 +242,17 @@ class Settings(BaseSettings):
     # Spec review auto-trigger: review after N incremental spec updates
     spec_review_auto_trigger_interval: int = 3
 
+    # Brave Search API
+    brave_api_key: str = ""
+
+    # Proactive Tech Watch
+    watch_web_search_enabled: bool = True
+    watch_registry_check_enabled: bool = True
+    watch_search_days: int = 30
+    watch_cron_enabled: bool = False
+    watch_cron_hour: int = 6
+    watch_max_concurrent_scans: int = 3
+
     # LLM fallback for large prompts (when JSON model limit exceeded)
     lexora_fallback_model: str = ""  # e.g., claude-sonnet-4-20250514
 

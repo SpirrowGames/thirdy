@@ -17,10 +17,12 @@ export interface WatchFinding {
   source_url: string | null;
   affected_area: string | null;
   recommendation: string | null;
+  is_new?: boolean;
 }
 
 export interface WatchSummary {
   total_findings: number;
+  new_findings: number;
   findings_by_impact: Record<string, number>;
   findings_by_source: Record<string, number>;
   highest_impact: string;

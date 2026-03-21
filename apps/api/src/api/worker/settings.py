@@ -4,7 +4,9 @@ from llm_client import LexoraClient
 
 from api.config import settings
 from api.db.engine import async_session
-from api.worker.jobs import spec_review_job, audit_conversation_job, watch_conversation_job, classify_and_extract_spec_job, classify_and_extract_decision_job, auto_pipeline_job
+from arq import cron
+from api.config import settings
+from api.worker.jobs import spec_review_job, audit_conversation_job, watch_conversation_job, classify_and_extract_spec_job, classify_and_extract_decision_job, auto_pipeline_job, periodic_watch_job
 from api.worker.redis_pool import get_redis_settings
 
 
@@ -29,11 +31,12 @@ async def shutdown(ctx: dict) -> None:
 
 
 class WorkerSettings:
-    functions = [spec_review_job, audit_conversation_job, watch_conversation_job, classify_and_extract_spec_job, classify_and_extract_decision_job, auto_pipeline_job]
+    functions = [spec_review_job, audit_conversation_job, watch_conversation_job, classify_and_extract_spec_job, classify_and_extract_decision_job, auto_pipeline_job, periodic_watch_job]
     redis_settings = get_redis_settings()
     on_startup = startup
     on_shutdown = shutdown
     max_jobs = 10
     job_timeout = 1800  # 30 min for auto pipeline
-    # cron_jobs – Phase 6 で有効化
-    # cron_jobs = [cron(audit_conversation_job, hour=0, minute=0)]
+    cron_jobs = [
+        cron(periodic_watch_job, hour=settings.watch_cron_hour, minute=0),
+    ]
